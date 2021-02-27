@@ -1,6 +1,7 @@
 .game-canvas-div {
-	width: 80%;
-	height: 80%;
+	width: 804px;
+	height: 604px;
+	padding-top: 100px;
 	margin: auto;
 }
 
