@@ -3,8 +3,7 @@ $(function(){
 	const canvasHeight = 400;
 	var player1Height = 68;
 	var player1Width = 41;
-	var jumpingInterval = 5;
-	var runningInterval = 200;
+	var interval = 5;
 	var environmentInterval = 10;
 	var roofLine = 60;
 	var horizontalLine = 300; 
@@ -44,13 +43,9 @@ $(function(){
 		ctx.drawImage(soil, canvasWidth-soilStarting, horizontalLine + 1, canvasWidth, canvasHeight - horizontalLine);
 	}
 	
-	// Environment cicle
 	window.setInterval(function () {
 		environmentPosition = environmentPosition+1;
-	}, environmentInterval);
-	
-	// Jump cicle
-	window.setInterval(function () {
+		
 		var jump = up || down;
 		if (jump) {
 			if (up) {
@@ -68,26 +63,22 @@ $(function(){
 					down = false;
 				}
 			} 		
-			drawEnvironment();
-			ctx.drawImage(player1Image, player1LocationW, player1LocationH, player1Width, player1Height);
 		}
-	}, jumpingInterval);
-	
-	// Running cicle
-	window.setInterval(function () {
-		var jump = up || down;
 		if (!jump) {
-			if (currentPosition == 1) {
-				player1Image = player1_2;
-				currentPosition = 2;
-			} else if (currentPosition == 2) {
-				player1Image = player1_1;
-				currentPosition = 1;
-			} 		
-			drawEnvironment();
-			ctx.drawImage(player1Image, player1LocationW, player1LocationH, player1Width, player1Height);
+			if (environmentPosition % 30 == 0) {
+				if (currentPosition == 1) {
+					player1Image = player1_2;
+					currentPosition = 2;
+				} else if (currentPosition == 2) {
+					player1Image = player1_1;
+					currentPosition = 1;
+				}
+			}	
 		}
-	}, runningInterval);
+		drawEnvironment();
+	    ctx.drawImage(player1Image, player1LocationW, player1LocationH, player1Width, player1Height);
+		
+	}, interval);
 	
 	document.onkeydown = function(e) {
 		if (!down) {
