@@ -88,6 +88,6 @@ $(function(){
 	}
 	
 	document.onkeydown = jump;
-	document.addEventListener("touchstart", jump);
+	document.getElementsByTagName("body")[0].addEventListener("touchstart", jump);
 	
 });
