@@ -1,0 +1,9 @@
+.game-canvas-div {
+	width: 80%;
+	height: 80%;
+	margin: auto;
+}
+
+.game-canvas-div > canvas {
+	border: 1px solid red;
+}
