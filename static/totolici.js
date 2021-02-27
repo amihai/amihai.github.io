@@ -80,10 +80,14 @@ $(function(){
 		
 	}, interval);
 	
-	document.onkeydown = function(e) {
+	function jump(e) {
 		if (!down) {
 			up = true;
 		}
-	};
+		e.preventDefault();
+	}
+	
+	document.onkeydown = jump;
+	document.touchstart = jump;
 	
 });
