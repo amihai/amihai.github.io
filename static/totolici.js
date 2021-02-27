@@ -89,5 +89,5 @@ $(function(){
 	
 	document.onkeydown = jump;
 	document.getElementsByTagName("body")[0].addEventListener("touchstart", jump);
-	
+	window.addEventListener("touchstart", jump);
 });
