@@ -27,7 +27,7 @@ $(function(){
 	var obstacles = []; 
 	
 	function getRandomObstacle() {
-		var rand = Math.floor((Math.random() * 10) + 1);
+		var rand = Math.floor((Math.random() * 7) + 1);
 		if (rand == 1) {
 			return portal1;
 		} else if (rand == 2) {
