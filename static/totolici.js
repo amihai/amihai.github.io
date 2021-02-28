@@ -1,3 +1,4 @@
+var playerName = "Andreea & Mihaela";
 
 $(function(){
 	const canvasWidth =  800;
@@ -71,11 +72,6 @@ $(function(){
 		ctx.drawImage(soil, -soilStarting, horizontalLine + 1, canvasWidth, canvasHeight - horizontalLine);
 		ctx.drawImage(soil, canvasWidth-soilStarting, horizontalLine + 1, canvasWidth, canvasHeight - horizontalLine);
 		
-		// add a new obstacle in the list
-		//if (obstacleStarting == 100) {
-		//	currentObstacleIndex++;
-		//	console.log(currentObstacleIndex);
-		//}
 		for (var indexObstacle = firstObstacleIndex; indexObstacle < firstObstacleIndex + obstaclesPerScreen; indexObstacle++) {
 			var obstacle = obstacles[indexObstacle];
 			var obstacleStarting = indexObstacle * 200 - environmentPosition;
@@ -88,6 +84,9 @@ $(function(){
 				
 			}
 		}
+		ctx.font = "14px Regular semi-serif";
+		ctx.fillText("SCORE: " + Math.floor(environmentPosition/100), 600, 10);
+		ctx.fillText(playerName, 10, 10);
 	}
 	
 	window.setInterval(function () {
