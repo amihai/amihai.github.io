@@ -226,7 +226,7 @@ $(function(){
 		}
 	}
 	
-	$("#pause-button").click(function() { pause = !pause; });
+	$("#pause-button").click(function() { pause = !pause; e.preventDefault(); });
 	$("#restart-button").click(restart);
 	
 	function jump(e) {
