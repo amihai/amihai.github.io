@@ -17,5 +17,12 @@
 .game-form {
 	text-align: center;
 }
+.game-form > button {
+	color: blue;
+	font-weight: bold;
+	background-image: linear-gradient(green, white, green);
+	width: 150px;
+	padding: 10px;
+}
 .game-canvas-div > canvas {
 }
