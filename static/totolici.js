@@ -212,7 +212,7 @@ $(function(){
 	// Event listners
 	
 	function restart() {
-		var conf = confirm("Are you sure?");
+		var conf = confirm("Sigur vrei sa dai restart?");
 		if (conf) {
 			obstacles = [undefined, undefined, undefined, undefined, undefined];
 			pause = false;
