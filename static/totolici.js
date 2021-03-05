@@ -1,5 +1,13 @@
 var playerName = "Andreea & Mihaela";
 
+function saveHI(hi) {
+	localStorage.setItem("hi_score", hi);
+}
+
+function loadHI() {
+	return localStorage.getItem("hi_score");
+}
+
 $(function(){
 	const canvasWidth =  800;
 	const canvasHeight = 400;
@@ -21,13 +29,18 @@ $(function(){
 	var player1_jump = document.getElementById("player1-jump");
 	var player1_dead = document.getElementById("player1-dead");
 	var soil = document.getElementById("soil");
+	var background = document.getElementById("background");
 	var portal1 = document.getElementById("portal-1");
 	var portal2 = document.getElementById("portal-2");
 	var portal3 = document.getElementById("portal-3");
 	var portal4 = document.getElementById("portal-4");
 	var firstObstacleIndex = 0;
 	var obstaclesPerScreen = 4;
-	var obstacles = []; 
+	var pause = false;
+	var obstacles = [undefined, undefined, undefined, undefined, undefined]; 
+	var currentPosition = 1;
+	var up = false;
+	var down = false;
 	
 	function getRandomObstacle() {
 		var rand = Math.floor((Math.random() * 7) + 1);
@@ -61,11 +74,6 @@ $(function(){
 	ctx.drawImage(player1Image, player1LocationW, player1LocationH, player1Width, player1Height);
 	
 	
-	
-	var currentPosition = 1;
-	var up = false;
-	var down = false;
-	
 	var lastObstacoleHit = -1;
 	function isHit() {
 		var bottomLeftCornerW = player1LocationW + player1Width;
@@ -92,6 +100,7 @@ $(function(){
 	
 	
 	var isDeadImage = false;
+	var counterDisplayedImage = 0;
 	function drawGameOver() {
 		ctx.font = "100px Regular semi-serif";
 		ctx.fillStyle = "#DF1313";
@@ -99,9 +108,19 @@ $(function(){
 		
 		const currentDate = new Date();
 		const timestamp = currentDate.getTime();
-		if (timestamp % 10 == 0) {
+		if (counterDisplayedImage++ == 50) {
+			counterDisplayedImage = 0;
 			isDeadImage = !isDeadImage;
 		}
+		var score = Math.floor(environmentPosition/100);
+		var hi_score = loadHI();
+		if (score > hi_score) {
+			saveHI(score);
+			ctx.font = "50px Regular semi-serif";
+			ctx.fillStyle = "#DF1313";
+			ctx.fillText("New High Score: " + score, 200, 380);
+		}
+		
 		if (isDeadImage) {
 			ctx.drawImage(player1_dead, player1LocationW, player1LocationH, player1Width, player1Height);
 		} else {
@@ -114,6 +133,9 @@ $(function(){
 		var soilStarting = environmentPosition % canvasWidth; 
 		ctx.drawImage(soil, -soilStarting, horizontalLine + 1, canvasWidth, canvasHeight - horizontalLine);
 		ctx.drawImage(soil, canvasWidth-soilStarting, horizontalLine + 1, canvasWidth, canvasHeight - horizontalLine);
+		ctx.drawImage(background, -soilStarting, 0, canvasWidth, horizontalLine);
+		ctx.drawImage(background, canvasWidth-soilStarting, 0, canvasWidth, horizontalLine);
+
 		
 		for (var indexObstacle = firstObstacleIndex; indexObstacle < firstObstacleIndex + obstaclesPerScreen; indexObstacle++) {
 			var obstacle = obstacles[indexObstacle];
@@ -127,8 +149,12 @@ $(function(){
 			}
 		}
 		ctx.font = "14px Regular semi-serif";
-		ctx.fillText("SCORE: " + Math.floor(environmentPosition/100), 600, 10);
+		ctx.fillText("SCORE: " + Math.floor(environmentPosition/100), 600, 20);
 		//ctx.fillText(playerName, 10, 10);
+		var hi_score = loadHI();
+		if (hi_score) {
+			ctx.fillText("HI: " + hi_score, 400, 20);
+		}
 		
 		isHit();
 		
@@ -139,6 +165,10 @@ $(function(){
 	}
 	
 	window.setInterval(function () {
+		if (pause) {
+			// Do nothing
+			return;
+		}
 		if (lives == 0) {
 			drawGameOver();
 			return;
@@ -179,13 +209,32 @@ $(function(){
 		
 	}, interval);
 	
+	// Event listners
+	
+	function restart() {
+		var conf = confirm("Are you sure?");
+		if (conf) {
+			obstacles = [undefined, undefined, undefined, undefined, undefined];
+			pause = false;
+			firstObstacleIndex = 0;
+			currentPosition = 1;
+			environmentPosition = 0;
+			lives = 5;
+			up = false;
+			down = false;
+			drawEnvironment();
+		}
+	}
+	
+	$("#pause-button").click(function() { pause = !pause; });
+	$("#restart-button").click(restart);
+	
 	function jump(e) {
 		if (!down) {
 			up = true;
 		}
 		e.preventDefault();
 	}
-	
 	document.onkeydown = jump;
 	document.getElementsByTagName("body")[0].addEventListener("touchstart", jump);
 	window.addEventListener("touchstart", jump);
