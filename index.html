@@ -1,31 +1,748 @@
-<!DOCTYPE html>
-<html>
-	<head>
-		<title>Totolici</title>
-		<link rel="stylesheet" href="static/totolici.css?version=0.0.9">
-		<script src="static/jquery-3.5.1.min.js"></script>
-		<script src="static/totolici.js?version=0.0.9"></script>
-	</head>
-	<body>
-		<div class="game-canvas-div"><canvas id="game-canvas"></canvas></div>
-		<div class="game-form">
-			<button id="pause-button">Pause</button>
-			<button id="restart-button">Restart</button>
-		</div>
-		<span class="unselectable">Version [0.0.9]</span>
-		
-		<img id="player1-1" width="42" height="70" src="static/player1-1.png?version=0.0.9" alt="Player One - 1" style="display: none">
-		<img id="player1-2" width="42" height="70" src="static/player1-2.png?version=0.0.9" alt="Player One - 2" style="display: none">
-		<img id="player1-jump" width="42" height="70" src="static/player1-jump.png?version=0.0.9" alt="Player One - Jump" style="display: none">
-		<img id="player1-dead" width="42" height="70" src="static/dead.png?version=0.0.9" alt="Player One - Dead" style="display: none">
-		<img id="soil" height="100" src="static/soil.png?version=0.0.9" alt="Soil" style="display: none">
-		<img id="background" height="300" src="static/background.jpg?version=0.0.9" alt="Soil" style="display: none">
-		
-		<img id="portal-1" width="25" height="45" src="static/portal-1.png?version=0.0.9" alt="Portal 1" style="display: none">
-		<img id="portal-2" width="25" height="55" src="static/portal-2.png?version=0.0.9" alt="Portal 2" style="display: none">
-		<img id="portal-3" width="25" height="70" src="static/portal-3.png?version=0.0.9" alt="Portal 3" style="display: none">
-		<img id="portal-4" width="25" height="80" src="static/portal-4.png?version=0.0.9" alt="Portal 4" style="display: none">
-		<img id="heart" width="13" height="10" src="static/heart.png?version=0.0.9" alt="Heart" style="display: none">
-		
-	</body>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>F1: Portrait Pole Position</title>
+  <style>
+    :root { color-scheme: dark; }
+    html,body{height:100%;margin:0;background:#0b0f14;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;}
+    #wrap{height:100%;display:grid;place-items:center;}
+    canvas{background:#0b0f14; border-radius:18px; box-shadow: 0 20px 80px rgba(0,0,0,.55); }
+    .hud {
+      position: fixed; left: 16px; top: 16px; display:flex; gap:12px; align-items:center;
+      padding:10px 12px; border-radius:16px; background: rgba(20,26,35,.78); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .avatar{width:44px;height:44px;border-radius:50%; border: 2px solid rgba(255,255,255,.18); overflow:hidden; flex:0 0 auto;}
+    .avatar img{width:100%;height:100%;object-fit:cover;}
+    .hud .meta{display:flex; flex-direction:column; line-height:1.15}
+    .hud .meta .t{font-weight:700; font-size:13px; opacity:.95}
+    .hud .meta .s{font-size:12px; opacity:.75}
+    .panel {
+      position: fixed; right: 16px; top: 16px; width: 320px;
+      padding:12px 12px; border-radius:16px; background: rgba(20,26,35,.78); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .row{display:flex; justify-content:space-between; font-size:12px; opacity:.9; margin:6px 0;}
+    .bar{height:10px; border-radius:999px; background: rgba(255,255,255,.10); overflow:hidden;}
+    .bar > i{display:block; height:100%; width:50%; background: rgba(255,255,255,.75);}
+    .keys{
+      margin-top:10px; font-size:12px; opacity:.78; line-height:1.35;
+      border-top:1px solid rgba(255,255,255,.08); padding-top:10px;
+    }
+    .toast{
+      position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+      padding:10px 12px; border-radius:999px; background: rgba(20,26,35,.78); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,.10); font-size:12px; opacity:0; transition: opacity .2s ease;
+      pointer-events:none;
+      max-width: 92vw;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .toast.show{opacity:1;}
+    .corner { position: fixed; left:16px; bottom: 16px; padding:10px 12px; border-radius:16px;
+      background: rgba(20,26,35,.78); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.08);
+      font-size:12px; opacity:.85; max-width: 560px;
+    }
+    .corner b{opacity:.95}
+    code{opacity:.9}
+    @media (max-width: 900px) {
+      .panel{position:fixed; left:16px; right:16px; top:auto; bottom:90px; width:auto;}
+      canvas{width: 96vw; height: 60vh;}
+      .corner{display:none;}
+    }
+  </style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c" width="1100" height="700"></canvas>
+</div>
+
+<div class="hud">
+  <div class="avatar"><img id="av" alt="driver avatar"></div>
+  <div class="meta">
+    <div class="t">Driver: The Portrait Rocket</div>
+    <div class="s" id="status">Press any movement key to launch…</div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="row"><span>Lap</span><span id="lap">1 / 3</span></div>
+  <div class="row"><span>Last</span><span id="last">—</span></div>
+  <div class="row"><span>Best</span><span id="best">—</span></div>
+  <div class="row"><span>Speed</span><span id="spd">0</span></div>
+  <div class="row"><span>Position</span><span id="pos">P?</span></div>
+
+  <div style="height:10px"></div>
+  <div class="row"><span>ERS</span><span id="ersTxt">100%</span></div>
+  <div class="bar"><i id="ersBar"></i></div>
+
+  <div style="height:10px"></div>
+  <div class="row"><span>DRS</span><span id="drsTxt">READY</span></div>
+  <div class="bar"><i id="drsBar"></i></div>
+
+  <div class="keys">
+    <div><b>Controls</b></div>
+    <div>W/↑ accelerate · S/↓ brake · A/← steer left · D/→ steer right</div>
+    <div>Space = ERS boost · Shift = DRS (only on straights) · R = restart</div>
+    <div style="margin-top:6px; opacity:.85">Tip: stay on asphalt, touch apexes, and use DRS when the marshal approves.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="corner">
+  <b>Goal:</b> Win 3 laps against AI rivals. Your “helmet” is literally your portrait. ✨<br/>
+  Tweak difficulty in <code>CONFIG</code> inside the script.
+</div>
+
+<script>
+(() => {
+  // --- Driver portrait (embedded) ---
+  const DRIVER_PORTRAIT = "data:image/jpeg;base64,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";
+  document.getElementById("av").src = DRIVER_PORTRAIT;
+
+  // --- Canvas setup ---
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+
+  // HUD refs
+  const ui = {
+    status: document.getElementById("status"),
+    lap: document.getElementById("lap"),
+    last: document.getElementById("last"),
+    best: document.getElementById("best"),
+    spd: document.getElementById("spd"),
+    pos: document.getElementById("pos"),
+    ersTxt: document.getElementById("ersTxt"),
+    ersBar: document.getElementById("ersBar"),
+    drsTxt: document.getElementById("drsTxt"),
+    drsBar: document.getElementById("drsBar"),
+    toast: document.getElementById("toast")
+  };
+
+  const CONFIG = {
+    laps: 3,
+    rivals: 4,
+    // physics-ish
+    accel: 0.16,
+    brake: 0.24,
+    drag: 0.985,
+    steer: 0.045,
+    maxSpeed: 10.5,
+    grassFriction: 0.965,
+    wallBounce: 0.35,
+    // abilities
+    ersMax: 100,
+    ersUse: 34,        // per second at full boost
+    ersRegen: 14,      // per second
+    ersExtra: 4.2,     // extra max speed and accel when active
+    drsWindow: 0.18,   // allowed straightness threshold
+    drsExtra: 3.8,     // extra top speed when active
+    // track
+    trackWidth: 110,
+    kerbWidth: 16,
+    // difficulty
+    rivalBase: 8.7
+  };
+
+  // --- Input ---
+  const keys = new Set();
+  const keyMap = {
+    ArrowUp:"up", KeyW:"up",
+    ArrowDown:"down", KeyS:"down",
+    ArrowLeft:"left", KeyA:"left",
+    ArrowRight:"right", KeyD:"right",
+    Space:"ers",
+    ShiftLeft:"drs", ShiftRight:"drs",
+    KeyR:"restart"
+  };
+  let hasStarted = false;
+
+  addEventListener("keydown", (e) => {
+    const k = keyMap[e.code];
+    if (!k) return;
+    e.preventDefault();
+    keys.add(k);
+    if (!hasStarted && (k==="up"||k==="down"||k==="left"||k==="right")) {
+      hasStarted = true;
+      ui.status.textContent = "Green green green!";
+      toast("Green green green!");
+    }
+    if (k==="restart") reset();
+  }, {passive:false});
+  addEventListener("keyup", (e) => {
+    const k = keyMap[e.code];
+    if (!k) return;
+    e.preventDefault();
+    keys.delete(k);
+  }, {passive:false});
+
+  function toast(msg) {
+    ui.toast.textContent = msg;
+    ui.toast.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=>ui.toast.classList.remove("show"), 1400);
+  }
+
+  // --- Track: a smooth closed loop parametric curve ---
+  function center(t) {
+    const a = 290, b = 200;
+    const x = W/2 + a*Math.cos(t) + 70*Math.cos(2*t+0.6) + 30*Math.cos(3*t-0.3);
+    const y = H/2 + b*Math.sin(t) + 55*Math.sin(2*t-0.9) - 25*Math.sin(3*t+0.4);
+    return {x,y};
+  }
+  function tangent(t) {
+    const a = 290, b = 200;
+    const dx = -a*Math.sin(t) - 140*Math.sin(2*t+0.6) - 90*Math.sin(3*t-0.3);
+    const dy =  b*Math.cos(t) + 110*Math.cos(2*t-0.9) - 75*Math.cos(3*t+0.4);
+    const m = Math.hypot(dx,dy) || 1;
+    return {x:dx/m, y:dy/m};
+  }
+
+  // Pre-sample track
+  const samples = [];
+  const N = 1400;
+  for (let i=0;i<N;i++) {
+    const t = i/N * Math.PI*2;
+    const c = center(t);
+    const ta = tangent(t);
+    const no = {x:-ta.y, y:ta.x};
+    samples.push({t, x:c.x, y:c.y, tx:ta.x, ty:ta.y, nx:no.x, ny:no.y});
+  }
+
+  function nearestOnTrack(px,py) {
+    let best = 0, bestD = 1e18;
+    for (let i=0;i<N;i+=4) {
+      const s = samples[i];
+      const d = (s.x-px)*(s.x-px) + (s.y-py)*(s.y-py);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    for (let k=-18;k<=18;k++) {
+      const i = (best + k + N) % N;
+      const s = samples[i];
+      const d = (s.x-px)*(s.x-px) + (s.y-py)*(s.y-py);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    return samples[best];
+  }
+
+  function onAsphalt(px,py) {
+    const s = nearestOnTrack(px,py);
+    const dx = px - s.x, dy = py - s.y;
+    const dist = Math.abs(dx*s.nx + dy*s.ny);
+    return dist <= CONFIG.trackWidth;
+  }
+  function onKerb(px,py) {
+    const s = nearestOnTrack(px,py);
+    const dx = px - s.x, dy = py - s.y;
+    const dist = Math.abs(dx*s.nx + dy*s.ny);
+    return dist > CONFIG.trackWidth && dist <= (CONFIG.trackWidth + CONFIG.kerbWidth);
+  }
+
+  // Car portrait image
+  const portraitImg = new Image();
+  portraitImg.src = DRIVER_PORTRAIT;
+
+  // polyfill for roundRect
+  if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) {
+      const rr = Math.min(r, w/2, h/2);
+      this.beginPath();
+      this.moveTo(x+rr,y);
+      this.arcTo(x+w,y, x+w,y+h, rr);
+      this.arcTo(x+w,y+h, x,y+h, rr);
+      this.arcTo(x,y+h, x,y, rr);
+      this.arcTo(x,y, x+w,y, rr);
+      this.closePath();
+      return this;
+    };
+  }
+
+  function drawCar(x,y,angle,scale,isPlayer,colorIndex=0) {
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate(angle);
+
+    const bodyW = 44*scale, bodyH = 24*scale;
+
+    // shadow
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = "#000";
+    ctx.beginPath();
+    ctx.ellipse(0, 14*scale, 26*scale, 10*scale, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    const palette = ["#ffffff","#b6d5ff","#ffd6a6","#d3ffd6","#ffc6d9","#e9e0ff"];
+    ctx.fillStyle = palette[colorIndex % palette.length];
+    ctx.strokeStyle = "rgba(255,255,255,.22)";
+    ctx.lineWidth = 2;
+
+    // rear wing
+    ctx.beginPath();
+    ctx.roundRect(-bodyW*0.62, -bodyH*0.60, bodyW*1.24, bodyH*0.28, 7*scale);
+    ctx.fill(); ctx.stroke();
+
+    // body
+    ctx.beginPath();
+    ctx.roundRect(-bodyW*0.55, -bodyH*0.44, bodyW*1.10, bodyH*1.12, 10*scale);
+    ctx.fill(); ctx.stroke();
+
+    // front wing
+    ctx.beginPath();
+    ctx.roundRect(-bodyW*0.72, bodyH*0.42, bodyW*1.44, bodyH*0.24, 7*scale);
+    ctx.fill(); ctx.stroke();
+
+    // wheels
+    ctx.fillStyle = "rgba(0,0,0,.85)";
+    const wx = bodyW*0.52, wy = bodyH*0.18, ww = 10*scale, wh = 16*scale;
+    ctx.beginPath(); ctx.roundRect(-wx-ww/2, -wy-wh/2, ww, wh, 4*scale); ctx.fill();
+    ctx.beginPath(); ctx.roundRect( wx-ww/2, -wy-wh/2, ww, wh, 4*scale); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(-wx-ww/2,  wy-wh/2, ww, wh, 4*scale); ctx.fill();
+    ctx.beginPath(); ctx.roundRect( wx-ww/2,  wy-wh/2, ww, wh, 4*scale); ctx.fill();
+
+    // cockpit portrait
+    const r = 10*scale;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(0, -2*scale, r, 0, Math.PI*2);
+    ctx.clip();
+    ctx.drawImage(portraitImg, -r, -r-2*scale, r*2, r*2);
+    ctx.restore();
+
+    if (isPlayer) {
+      ctx.globalAlpha = 0.55;
+      ctx.strokeStyle = "rgba(255,255,255,.55)";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(0, -2*scale, r+3*scale, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    ctx.restore();
+  }
+
+  // --- Game state ---
+  const state = {
+    time: 0,
+    lap: 1,
+    best: null,
+    last: null,
+    lapStart: performance.now(),
+    finished: false
+  };
+
+  const player = {
+    x: W/2, y: H/2 + 220,
+    vx: 0, vy: 0,
+    a: -Math.PI/2,
+    ers: CONFIG.ersMax,
+    drs: 1,
+    drsActive: false,
+    ersActive: false
+  };
+
+  const rivals = [];
+  function spawnRivals() {
+    rivals.length = 0;
+    for (let i=0;i<CONFIG.rivals;i++) {
+      const t0 = (i/CONFIG.rivals) * Math.PI*2;
+      const idx = Math.floor((t0/(Math.PI*2))*N);
+      const s = samples[idx];
+      rivals.push({
+        x: s.x + s.nx*(CONFIG.trackWidth*0.35),
+        y: s.y + s.ny*(CONFIG.trackWidth*0.35),
+        speed: CONFIG.rivalBase + Math.random()*1.1,
+        t: s.t,
+        color: i+1,
+        wob: Math.random()*Math.PI*2
+      });
+    }
+  }
+
+  function reset() {
+    state.time = 0;
+    state.lap = 1;
+    state.best = null;
+    state.last = null;
+    state.lapStart = performance.now();
+    state.finished = false;
+    hasStarted = false;
+    ui.status.textContent = "Press any movement key to launch…";
+
+    const start = nearestOnTrack(W/2, H/2 + 220);
+    player.x = start.x;
+    player.y = start.y + start.ny*(CONFIG.trackWidth*0.15);
+    player.vx = 0; player.vy = 0;
+    player.a = Math.atan2(start.ty, start.tx);
+    player.ers = CONFIG.ersMax;
+    player.drs = 1;
+    player.drsActive = false;
+    player.ersActive = false;
+
+    spawnRivals();
+    toast("New session. Go hunt that pole.");
+    prevT = null;
+  }
+
+  let prevT = null;
+
+  function progressAlongTrack(px,py) {
+    return nearestOnTrack(px,py).t;
+  }
+
+  // start/finish reference
+  const startIndex = Math.floor(N*0.03);
+  const startLine = samples[startIndex];
+
+  function updateRivals(dt) {
+    for (const r of rivals) {
+      r.wob += dt*0.9;
+      const speed = r.speed * (1 + 0.06*Math.sin(r.wob));
+      r.t += dt * speed * 0.12;
+      if (r.t > Math.PI*2) r.t -= Math.PI*2;
+      const s = samples[Math.floor((r.t/(Math.PI*2))*N)];
+      const offset = (Math.sin(r.wob*0.7) * 0.25 + 0.10*Math.sin(r.wob*1.4)) * CONFIG.trackWidth;
+      r.x = s.x + s.nx*offset;
+      r.y = s.y + s.ny*offset;
+    }
+  }
+
+  function computeOrder() {
+    const items = [];
+    const pT = progressAlongTrack(player.x, player.y);
+    const pProg = (state.lap-1) + (pT/(Math.PI*2));
+    items.push({prog:pProg, isPlayer:true});
+    for (let i=0;i<rivals.length;i++) {
+      const r = rivals[i];
+      const rProg = (state.lap-1) + (r.t/(Math.PI*2));
+      items.push({prog:rProg, isPlayer:false});
+    }
+    items.sort((a,b)=>b.prog-a.prog);
+    return items.findIndex(x=>x.isPlayer) + 1;
+  }
+
+  function updatePlayer(dt) {
+    const up = keys.has("up"), down = keys.has("down"), left = keys.has("left"), right = keys.has("right");
+    player.ersActive = keys.has("ers") && player.ers > 1 && hasStarted && !state.finished;
+    player.drsActive = keys.has("drs") && player.drs > 0.2 && hasStarted && !state.finished;
+
+    const speed = Math.hypot(player.vx, player.vy);
+    const steer = CONFIG.steer * (0.35 + 0.65*Math.min(1, speed/CONFIG.maxSpeed));
+    if (left) player.a -= steer;
+    if (right) player.a += steer;
+
+    const maxSpeed = CONFIG.maxSpeed + (player.ersActive ? CONFIG.ersExtra : 0) + (player.drsActive ? CONFIG.drsExtra : 0);
+    const accel = CONFIG.accel + (player.ersActive ? 0.09 : 0);
+    const brake = CONFIG.brake;
+
+    let ax = 0, ay = 0;
+    const fx = Math.cos(player.a), fy = Math.sin(player.a);
+    if (up) { ax += fx*accel; ay += fy*accel; }
+    if (down) { ax -= fx*brake; ay -= fy*brake; }
+
+    player.vx += ax * dt*60;
+    player.vy += ay * dt*60;
+
+    player.vx *= Math.pow(CONFIG.drag, dt*60);
+    player.vy *= Math.pow(CONFIG.drag, dt*60);
+
+    const sp = Math.hypot(player.vx, player.vy);
+    if (sp > maxSpeed) {
+      const k = maxSpeed / (sp || 1);
+      player.vx *= k; player.vy *= k;
+    }
+
+    const asphalt = onAsphalt(player.x, player.y);
+    const kerb = onKerb(player.x, player.y);
+    if (!asphalt && !kerb) {
+      player.vx *= Math.pow(CONFIG.grassFriction, dt*60);
+      player.vy *= Math.pow(CONFIG.grassFriction, dt*60);
+    } else if (kerb) {
+      player.vx *= Math.pow(0.978, dt*60);
+      player.vy *= Math.pow(0.978, dt*60);
+    }
+
+    player.x += player.vx * dt*60;
+    player.y += player.vy * dt*60;
+
+    if (player.x < 14) { player.x = 14; player.vx = -player.vx*CONFIG.wallBounce; toast("Wall kiss!"); }
+    if (player.x > W-14) { player.x = W-14; player.vx = -player.vx*CONFIG.wallBounce; toast("Wall kiss!"); }
+    if (player.y < 14) { player.y = 14; player.vy = -player.vy*CONFIG.wallBounce; toast("Wall kiss!"); }
+    if (player.y > H-14) { player.y = H-14; player.vy = -player.vy*CONFIG.wallBounce; toast("Wall kiss!"); }
+
+    if (player.ersActive) player.ers -= CONFIG.ersUse * dt;
+    else player.ers += CONFIG.ersRegen * dt;
+    player.ers = Math.max(0, Math.min(CONFIG.ersMax, player.ers));
+
+    const s = nearestOnTrack(player.x, player.y);
+    const heading = {x: Math.cos(player.a), y: Math.sin(player.a)};
+    const dot = heading.x*s.tx + heading.y*s.ty;
+    const straightness = Math.max(0, dot);
+    const allowed = straightness > (1 - CONFIG.drsWindow) && onAsphalt(player.x, player.y);
+    const target = allowed ? 1 : 0;
+    player.drs += (target - player.drs) * (1 - Math.pow(0.001, dt));
+    player.drs = Math.max(0, Math.min(1, player.drs));
+
+    if (keys.has("drs") && !allowed && hasStarted && !state.finished) {
+      ui.drsTxt.textContent = "NOT ALLOWED";
+    }
+
+    const tNow = progressAlongTrack(player.x, player.y);
+    if (prevT !== null) {
+      const wrapped = (prevT > 5.9 && tNow < 0.4);
+      if (wrapped && hasStarted && !state.finished) {
+        const now = performance.now();
+        const lapTime = (now - state.lapStart) / 1000;
+        state.last = lapTime;
+        state.best = state.best === null ? lapTime : Math.min(state.best, lapTime);
+        state.lapStart = now;
+
+        if (state.lap < CONFIG.laps) {
+          state.lap += 1;
+          toast(`Lap ${state.lap-1} done! Push push push!`);
+        } else {
+          state.finished = true;
+          toast("CHEQUERED FLAG! 🏁");
+          ui.status.textContent = "Chequered flag! Press R to restart.";
+        }
+      }
+    }
+    prevT = tNow;
+  }
+
+  function drawTrack() {
+    ctx.fillStyle = "#08110c";
+    ctx.fillRect(0,0,W,H);
+
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    ctx.strokeStyle = "#2a2f37";
+    ctx.lineWidth = CONFIG.trackWidth*2;
+    ctx.beginPath();
+    for (let i=0;i<N;i++) {
+      const s = samples[i];
+      if (i===0) ctx.moveTo(s.x,s.y);
+      else ctx.lineTo(s.x,s.y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.strokeStyle = "#c94b4b";
+    ctx.lineWidth = (CONFIG.trackWidth*2 + CONFIG.kerbWidth*2);
+    ctx.setLineDash([16,14]);
+    ctx.globalAlpha = 0.85;
+    ctx.beginPath();
+    for (let i=0;i<N;i++) {
+      const s = samples[i];
+      if (i===0) ctx.moveTo(s.x,s.y);
+      else ctx.lineTo(s.x,s.y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+
+    ctx.strokeStyle = "#2a2f37";
+    ctx.lineWidth = CONFIG.trackWidth*2;
+    ctx.beginPath();
+    for (let i=0;i<N;i++) {
+      const s = samples[i];
+      if (i===0) ctx.moveTo(s.x,s.y);
+      else ctx.lineTo(s.x,s.y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.strokeStyle = "rgba(255,255,255,.10)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i=0;i<N;i+=6) {
+      const s = samples[i];
+      if (i===0) ctx.moveTo(s.x,s.y);
+      else ctx.lineTo(s.x,s.y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    // start/finish
+    ctx.save();
+    ctx.translate(startLine.x, startLine.y);
+    const ang = Math.atan2(startLine.ty, startLine.tx) + Math.PI/2;
+    ctx.rotate(ang);
+    ctx.fillStyle = "rgba(255,255,255,.85)";
+    ctx.fillRect(-CONFIG.trackWidth, -4, CONFIG.trackWidth*2, 8);
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = "rgba(0,0,0,.75)";
+    for (let i=0;i<8;i++) {
+      ctx.fillRect(-CONFIG.trackWidth + i*(CONFIG.trackWidth*2/8), -4, (CONFIG.trackWidth*2/16), 8);
+    }
+    ctx.restore();
+  }
+
+  function drawRivals() {
+    for (let i=0;i<rivals.length;i++) {
+      const r = rivals[i];
+      const s = samples[Math.floor((r.t/(Math.PI*2))*N)];
+      const ang = Math.atan2(s.ty, s.tx);
+      drawCar(r.x, r.y, ang, 1, false, r.color);
+    }
+  }
+
+  function drawPlayer() {
+    const sp = Math.hypot(player.vx, player.vy);
+    const wob = (Math.sin(state.time*6) * 0.06) * (sp/CONFIG.maxSpeed);
+    drawCar(player.x, player.y, player.a + wob, 1, true, 0);
+
+    if (player.ersActive) {
+      ctx.save();
+      ctx.translate(player.x, player.y);
+      ctx.rotate(player.a);
+      ctx.globalAlpha = 0.8;
+      ctx.fillStyle = "rgba(255,255,255,.85)";
+      ctx.beginPath();
+      ctx.ellipse(0, 20, 5, 12, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+  }
+
+  function drawOfftrackWarnings() {
+    const asphalt = onAsphalt(player.x, player.y);
+    const kerb = onKerb(player.x, player.y);
+    if (!asphalt && !kerb && hasStarted && !state.finished) {
+      ui.status.textContent = "Off track! Rejoin safely.";
+    } else if (!state.finished) {
+      ui.status.textContent = hasStarted ? "Race on. Find the apex." : "Press any movement key to launch…";
+    }
+  }
+
+  function formatTime(t) {
+    if (t == null) return "—";
+    const m = Math.floor(t/60);
+    const s = (t - m*60).toFixed(3).padStart(6,"0");
+    return `${m}:${s}`;
+  }
+
+  function updateHUD() {
+    ui.lap.textContent = `${state.lap} / ${CONFIG.laps}`;
+    ui.last.textContent = formatTime(state.last);
+    ui.best.textContent = formatTime(state.best);
+    const sp = Math.hypot(player.vx, player.vy);
+    ui.spd.textContent = Math.round(sp*32) + " km/h-ish";
+    ui.pos.textContent = "P" + computeOrder();
+
+    const ersPct = Math.round((player.ers/CONFIG.ersMax)*100);
+    ui.ersTxt.textContent = ersPct + "%";
+    ui.ersBar.style.width = ersPct + "%";
+
+    const drsPct = Math.round(player.drs*100);
+    ui.drsBar.style.width = drsPct + "%";
+    const allowed = player.drs > 0.9 && onAsphalt(player.x, player.y);
+    ui.drsTxt.textContent = (keys.has("drs") && allowed) ? "OPEN" : (allowed ? "READY" : "CHARGING");
+  }
+
+  function drawMiniMap() {
+    const x0 = W - 220, y0 = 24, w = 196, h = 120;
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = "rgba(20,26,35,.55)";
+    ctx.strokeStyle = "rgba(255,255,255,.10)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(x0, y0, w, h, 14);
+    ctx.fill();
+    ctx.stroke();
+
+    let minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
+    for (let i=0;i<N;i+=10) {
+      const s = samples[i];
+      if (s.x<minX) minX=s.x;
+      if (s.x>maxX) maxX=s.x;
+      if (s.y<minY) minY=s.y;
+      if (s.y>maxY) maxY=s.y;
+    }
+    const sx = (w-24)/(maxX-minX);
+    const sy = (h-24)/(maxY-minY);
+    const sc = Math.min(sx,sy);
+    const ox = x0 + 12 - minX*sc;
+    const oy = y0 + 12 - minY*sc;
+
+    ctx.strokeStyle = "rgba(255,255,255,.35)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i=0;i<N;i+=8) {
+      const s = samples[i];
+      const X = ox + s.x*sc;
+      const Y = oy + s.y*sc;
+      if (i===0) ctx.moveTo(X,Y);
+      else ctx.lineTo(X,Y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    function dot(px,py,fill) {
+      const X = ox + px*sc, Y = oy + py*sc;
+      ctx.fillStyle = fill;
+      ctx.beginPath();
+      ctx.arc(X,Y, 3.5, 0, Math.PI*2);
+      ctx.fill();
+    }
+    for (const r of rivals) dot(r.x,r.y,"rgba(255,255,255,.55)");
+    dot(player.x,player.y,"rgba(255,255,255,.95)");
+
+    ctx.restore();
+  }
+
+  function render() {
+    drawTrack();
+    drawRivals();
+    drawPlayer();
+    drawMiniMap();
+    drawOfftrackWarnings();
+
+    if (state.finished) {
+      ctx.save();
+      ctx.fillStyle = "rgba(0,0,0,.45)";
+      ctx.fillRect(0,0,W,H);
+      ctx.fillStyle = "rgba(255,255,255,.95)";
+      ctx.font = "700 44px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText("CHEQUERED FLAG 🏁", W/2, H/2 - 18);
+      ctx.font = "500 16px system-ui";
+      ctx.globalAlpha = 0.9;
+      const p = computeOrder();
+      ctx.fillText(`Finish: P${p} · Best: ${formatTime(state.best)} · Press R to restart`, W/2, H/2 + 18);
+      ctx.restore();
+    }
+  }
+
+  let last = performance.now();
+  function tick(now) {
+    const dt = Math.min(0.033, (now - last)/1000);
+    last = now;
+    state.time += dt;
+
+    if (!state.finished) {
+      updateRivals(dt);
+      updatePlayer(dt);
+    }
+
+    updateHUD();
+    render();
+    requestAnimationFrame(tick);
+  }
+
+  reset();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
 </html>
