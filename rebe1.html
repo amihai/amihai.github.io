@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rebe învață matematica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pink:#ff5ea8;
+    --pink-dark:#e23e8c;
+    --purple:#8b5cf6;
+    --blue:#38bdf8;
+    --green:#34d399;
+    --yellow:#fbbf24;
+    --orange:#fb923c;
+    --ink:#3b2b57;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Fredoka','Comic Sans MS','Chalkboard SE','Comic Neue',system-ui,-apple-system,sans-serif;
+    color:var(--ink);
+    background:linear-gradient(180deg,#a9e0fb 0%,#c9edff 42%,#eaf8ff 100%);
+    min-height:100vh;
+    padding:12px;
+    -webkit-user-select:none;user-select:none;
+  }
+  .wrap{max-width:920px;margin:0 auto;}
+
+  /* Cer cu nori care plutesc lent spre dreapta */
+  .sky{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;}
+  .cloud-wrap{position:absolute;left:0;animation:drift linear infinite;will-change:transform;}
+  .cloud{position:relative;width:130px;height:42px;background:#fff;border-radius:42px;opacity:.85;filter:blur(1px);}
+  .cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%;}
+  .cloud::before{width:58px;height:58px;top:-26px;left:20px;}
+  .cloud::after{width:42px;height:42px;top:-18px;left:66px;}
+  @keyframes drift{from{transform:translateX(-35vw)}to{transform:translateX(135vw)}}
+
+  /* Header */
+  header{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:var(--card);
+    border-radius:22px;
+    padding:12px 18px;
+    box-shadow:0 8px 22px rgba(139,92,246,.15);
+    border:3px solid #fff;
+  }
+  header h1{
+    font-size:clamp(20px,4.5vw,30px);
+    margin:0;font-weight:700;
+    background:linear-gradient(90deg,var(--pink),var(--purple),var(--blue));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .stars{
+    display:flex;align-items:center;gap:6px;
+    background:linear-gradient(90deg,#fff7d6,#ffe9a8);
+    border:2px solid #ffd766;
+    padding:8px 14px;border-radius:999px;
+    font-weight:700;font-size:clamp(16px,3.5vw,20px);
+    white-space:nowrap;
+  }
+  #starCount{display:inline-block;min-width:1ch;transition:transform .2s;}
+  #starCount.pop{transform:scale(1.6);}
+  .mute-btn{
+    border:none;background:#f1ecff;border-radius:50%;
+    width:44px;height:44px;font-size:22px;cursor:pointer;line-height:1;
+    box-shadow:0 3px 0 #d9cffb;
+  }
+  .mute-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #d9cffb;}
+
+  /* Stations (Rebe + game buttons) */
+  .stations{position:relative;padding-top:118px;margin-top:16px;}
+  .btn-row{display:flex;gap:8px;justify-content:center;}
+  .game-btn{
+    flex:1 1 0;min-width:0;
+    background:var(--card);
+    border:3px solid #fff;
+    border-radius:20px;
+    padding:12px 4px 10px;
+    cursor:pointer;
+    box-shadow:0 6px 16px rgba(0,0,0,.08);
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    transition:transform .15s, box-shadow .15s, border-color .15s;
+    font-family:inherit;color:var(--ink);
+  }
+  .game-btn .ic{font-size:clamp(24px,6vw,34px);line-height:1;}
+  .game-btn .lb{font-size:clamp(11px,2.6vw,15px);font-weight:600;}
+  .game-btn:hover{transform:translateY(-3px);}
+  .game-btn.active{
+    border-color:var(--pink);
+    box-shadow:0 8px 20px rgba(255,94,168,.35);
+    transform:translateY(-4px);
+    background:linear-gradient(180deg,#fff,#fff0f7);
+  }
+
+  /* Rebe */
+  .rebe{
+    position:absolute;top:0;left:0;width:96px;height:118px;
+    transition:left 1s cubic-bezier(.34,1.2,.64,1);
+    z-index:5;pointer-events:none;
+  }
+  .rebe.no-anim{transition:none;}
+  .rebe-inner{
+    position:absolute;inset:0;
+    transform-origin:50% 100%;
+    animation:bob 2.4s ease-in-out infinite;
+  }
+  .rebe.walking .rebe-inner{animation:waddle .34s ease-in-out infinite;}
+  .rebe.happy   .rebe-inner{animation:jump .7s ease;}
+  .rebe.oops    .rebe-inner{animation:shake .5s ease;}
+  .rebe-head{
+    position:absolute;top:0;left:50%;transform:translateX(-50%);
+    width:58px;height:auto;z-index:2;
+    filter:drop-shadow(0 2px 3px rgba(0,0,0,.2));
+  }
+  .rebe-body{
+    position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+    width:58px;height:auto;z-index:1;overflow:visible;
+  }
+  .arm-wave{transform-box:fill-box;transform-origin:0% 100%;animation:wave 1.6s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  @keyframes waddle{0%,100%{transform:translateY(-3px) rotate(-5deg)}50%{transform:translateY(-3px) rotate(5deg)}}
+  @keyframes jump{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-30px) scale(1.06) rotate(-4deg)}55%{transform:translateY(0) scale(1)}70%{transform:translateY(-14px) rotate(3deg)}100%{transform:translateY(0)}}
+  @keyframes shake{0%,100%{transform:rotate(0)}20%{transform:rotate(-9deg)}40%{transform:rotate(9deg)}60%{transform:rotate(-6deg)}80%{transform:rotate(6deg)}}
+  @keyframes wave{0%,100%{transform:rotate(0)}50%{transform:rotate(-22deg)}}
+
+  /* Speech bubble */
+  .speech{
+    position:relative;margin:6px auto 0;max-width:560px;
+    background:#fff;border:3px solid var(--purple);
+    border-radius:18px;padding:12px 18px;text-align:center;
+    font-size:clamp(15px,3.4vw,19px);font-weight:500;
+    box-shadow:0 6px 14px rgba(139,92,246,.18);
+    animation:pop .3s ease;
+  }
+  .speech::after{
+    content:"";position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+    border:8px solid transparent;border-bottom-color:var(--purple);
+  }
+  @keyframes pop{0%{transform:scale(.85);opacity:0}100%{transform:scale(1);opacity:1}}
+
+  /* Game panel */
+  .panel{
+    background:var(--card);border-radius:26px;margin-top:16px;
+    padding:20px 16px 26px;text-align:center;
+    box-shadow:0 10px 28px rgba(0,0,0,.10);border:3px solid #fff;
+  }
+  .panel-title{font-size:clamp(18px,4vw,24px);font-weight:700;margin:0 0 10px;}
+  .question{font-size:clamp(20px,5vw,30px);font-weight:700;margin:6px 0 14px;}
+
+  .emoji-group{
+    display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;
+    max-width:460px;margin:0 auto 6px;font-size:clamp(28px,7vw,44px);line-height:1;
+  }
+  .op{font-size:clamp(30px,8vw,52px);font-weight:700;color:var(--purple);padding:0 4px;}
+  .equation{
+    display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;
+    margin:8px auto 12px;
+  }
+  .crossed{position:relative;opacity:.55;}
+  .crossed::after{
+    content:"";position:absolute;left:8%;top:45%;width:84%;height:8%;
+    background:var(--pink-dark);border-radius:4px;transform:rotate(-18deg);
+  }
+  .compare-line{font-size:clamp(40px,11vw,72px);font-weight:700;margin:10px 0 4px;}
+  .qmark{color:var(--pink);}
+
+  .shape-svg{width:clamp(120px,32vw,180px);height:clamp(120px,32vw,180px);margin:4px auto 8px;display:block;}
+
+  /* Answers */
+  .answers{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px;}
+  .ans{
+    font-family:inherit;font-weight:700;color:var(--ink);
+    background:#fff;border:3px solid #e6e0ff;border-radius:18px;
+    min-width:84px;padding:14px 18px;cursor:pointer;
+    font-size:clamp(22px,5vw,30px);line-height:1.05;
+    box-shadow:0 5px 0 #ded6ff;transition:transform .1s;
+    display:flex;flex-direction:column;align-items:center;gap:2px;
+  }
+  .ans .sub{font-size:clamp(11px,2.6vw,14px);font-weight:600;color:#8a7fb5;}
+  .ans:hover{transform:translateY(-2px);border-color:var(--purple);}
+  .ans:active{transform:translateY(3px);box-shadow:0 2px 0 #ded6ff;}
+  .ans:disabled{cursor:default;}
+  .ans.correct{background:#d7fbe8;border-color:var(--green);box-shadow:0 5px 0 #79e0b3;animation:jump .6s ease;}
+  .ans.wrong{background:#ffe0e6;border-color:var(--pink-dark);box-shadow:0 5px 0 #f2a6ba;opacity:.85;animation:shake .4s ease;}
+
+  .again{
+    margin-top:18px;font-family:inherit;font-weight:700;
+    background:linear-gradient(90deg,var(--blue),var(--purple));
+    color:#fff;border:none;border-radius:16px;padding:10px 20px;
+    font-size:16px;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,.12);
+  }
+  .again:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.12);}
+
+  footer{text-align:center;margin:18px 0 6px;color:#9a8fc0;font-size:14px;font-weight:500;}
+
+  /* Confetti */
+  .confetti-layer{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:50;}
+  .confetti-piece{position:absolute;top:-24px;width:11px;height:15px;border-radius:2px;animation:fall linear forwards;}
+  @keyframes fall{
+    0%{transform:translateY(-24px) rotate(0);opacity:1}
+    100%{transform:translateY(105vh) rotate(720deg);opacity:.9}
+  }
+</style>
+</head>
+<body>
+<div class="sky" aria-hidden="true">
+  <div class="cloud-wrap" style="top:5%;animation-duration:78s;animation-delay:-6s"><div class="cloud" style="transform:scale(1.1);opacity:.9"></div></div>
+  <div class="cloud-wrap" style="top:15%;animation-duration:110s;animation-delay:-55s"><div class="cloud" style="transform:scale(.6);opacity:.72"></div></div>
+  <div class="cloud-wrap" style="top:28%;animation-duration:64s;animation-delay:-22s"><div class="cloud" style="transform:scale(1.4);opacity:.85"></div></div>
+  <div class="cloud-wrap" style="top:45%;animation-duration:125s;animation-delay:-85s"><div class="cloud" style="transform:scale(.5);opacity:.68"></div></div>
+  <div class="cloud-wrap" style="top:60%;animation-duration:92s;animation-delay:-38s"><div class="cloud" style="transform:scale(.95);opacity:.8"></div></div>
+  <div class="cloud-wrap" style="top:75%;animation-duration:84s;animation-delay:-63s"><div class="cloud" style="transform:scale(1.2);opacity:.85"></div></div>
+</div>
+<div class="wrap">
+  <header>
+    <h1>🌸 Rebe învață matematica</h1>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="stars">⭐ <span id="starCount">0</span></div>
+      <button class="mute-btn" id="muteBtn" title="Pornește/oprește sunetul">🔊</button>
+    </div>
+  </header>
+
+  <div class="stations">
+        <div class="rebe" id="rebe">
+      <div class="rebe-inner">
+        <img class="rebe-head" alt="Rebe" src="rebe-head.png">
+        <svg class="rebe-body" viewBox="17 44 66 84" xmlns="http://www.w3.org/2000/svg">
+          <rect x="41" y="104" width="7" height="16" rx="3" fill="#ffd9b3"/>
+          <rect x="52" y="104" width="7" height="16" rx="3" fill="#ffd9b3"/>
+          <ellipse cx="44" cy="122" rx="8" ry="5" fill="#e11d6b"/>
+          <ellipse cx="56" cy="122" rx="8" ry="5" fill="#e11d6b"/>
+          <rect x="45" y="49" width="10" height="13" rx="4" fill="#f0b892"/>
+          <polygon points="41,58 59,58 72,108 28,108" fill="#ff5ea8"/>
+          <polygon points="41,58 59,58 62,74 38,74" fill="#ff86c0"/>
+          <circle cx="42" cy="88" r="2.4" fill="#fff"/>
+          <circle cx="55" cy="82" r="2.4" fill="#fff"/>
+          <circle cx="50" cy="98" r="2.4" fill="#fff"/>
+          <circle cx="60" cy="97" r="2.4" fill="#fff"/>
+          <line x1="42" y1="64" x2="27" y2="84" stroke="#ffd9b3" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="26" cy="85" r="4.5" fill="#ffd9b3"/>
+          <g class="arm-wave">
+            <line x1="58" y1="64" x2="76" y2="50" stroke="#ffd9b3" stroke-width="7" stroke-linecap="round"/>
+            <circle cx="77" cy="49" r="4.5" fill="#ffd9b3"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="btn-row" id="btnRow">
+      <button class="game-btn" data-game="count"><span class="ic">🔢</span><span class="lb">Numărăm</span></button>
+      <button class="game-btn" data-game="add"><span class="ic">➕</span><span class="lb">Adunăm</span></button>
+      <button class="game-btn" data-game="sub"><span class="ic">➖</span><span class="lb">Scădem</span></button>
+      <button class="game-btn" data-game="compare"><span class="ic">⚖️</span><span class="lb">Comparăm</span></button>
+      <button class="game-btn" data-game="shapes"><span class="ic">🔺</span><span class="lb">Forme</span></button>
+    </div>
+  </div>
+
+  <div class="speech" id="speech">Bună! Eu sunt Rebe. Hai să învățăm matematica împreună! 💖</div>
+
+  <div class="panel">
+    <h2 class="panel-title" id="panelTitle"></h2>
+    <div id="question" class="question"></div>
+    <div id="answers" class="answers"></div>
+    <button class="again" id="againBtn">🔄 Altă întrebare</button>
+  </div>
+
+  <footer>Făcut cu drag pentru Rebe 💖</footer>
+</div>
+
+<div class="confetti-layer" id="confetti"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Elemente ----------
+  var rebe = document.getElementById('rebe');
+  var stations = document.querySelector('.stations');
+  var btnRow = document.getElementById('btnRow');
+  var speech = document.getElementById('speech');
+  var panelTitle = document.getElementById('panelTitle');
+  var questionEl = document.getElementById('question');
+  var answersEl = document.getElementById('answers');
+  var starCountEl = document.getElementById('starCount');
+  var muteBtn = document.getElementById('muteBtn');
+  var confettiLayer = document.getElementById('confetti');
+  var gameBtns = Array.prototype.slice.call(btnRow.querySelectorAll('.game-btn'));
+
+  // ---------- Stare ----------
+  var stars = parseInt(localStorage.getItem('rebe_stars') || '0', 10) || 0;
+  var muted = localStorage.getItem('rebe_muted') === '1';
+  var current = 'count';
+  var locked = false; // blocheaza dupa raspuns corect, pana la runda urmatoare
+
+  starCountEl.textContent = stars;
+  muteBtn.textContent = muted ? '🔇' : '🔊';
+
+  // ---------- Utile ----------
+  function randInt(lo, hi){ return Math.floor(Math.random()*(hi-lo+1))+lo; }
+  function choice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+  function shuffle(arr){
+    for(var i=arr.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=arr[i]; arr[i]=arr[j]; arr[j]=t; }
+    return arr;
+  }
+
+  var EMOJIS = ['🍎','🎈','⭐','🍓','🐞','🌸','🐤','🦋','🍊','🐢','🍒','🌷','🐝','🍉'];
+  var CONFETTI_COLORS = ['#ff5ea8','#8b5cf6','#38bdf8','#34d399','#fbbf24','#fb923c','#f472b6'];
+  var SHAPE_COLORS = ['#ff5ea8','#8b5cf6','#38bdf8','#34d399','#fbbf24','#fb923c'];
+
+  var PRAISE = ['Bravo, Rebe! 🎉','Super! Ai reușit! ⭐','Extraordinar! 🌟','Felicitări! 👏','Ești o campioană! 💖','Corect! Ce deșteaptă ești! 😊','Perfect! 🌈'];
+  var ENCOURAGE = ['Hopa! Mai încearcă o dată. 💪','Aproape! Gândește-te puțin. 🤔','Nu-i nimic, poți reuși! 🌈','Mai încearcă, sunt sigură că poți! ✨'];
+
+  function speak(text){
+    speech.textContent = text;
+    speech.style.animation = 'none';
+    void speech.offsetWidth;
+    speech.style.animation = 'pop .3s ease';
+  }
+
+  // ---------- Sunet (Web Audio) ----------
+  var audioCtx = null;
+  function ensureAudio(){
+    if(muted) return;
+    if(!audioCtx){
+      try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ audioCtx = null; }
+    }
+    if(audioCtx && audioCtx.state === 'suspended'){ audioCtx.resume(); }
+  }
+  function tone(freq, start, dur, type){
+    if(!audioCtx || muted) return;
+    var o = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    o.connect(g); g.connect(audioCtx.destination);
+    var t0 = audioCtx.currentTime + start;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.25, t0+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    o.start(t0); o.stop(t0+dur+0.02);
+  }
+  function goodSound(){ ensureAudio(); tone(523,0,0.16,'triangle'); tone(659,0.12,0.16,'triangle'); tone(784,0.24,0.28,'triangle'); }
+  function badSound(){ ensureAudio(); tone(300,0,0.18,'sine'); tone(220,0.14,0.22,'sine'); }
+
+  // ---------- Confetti ----------
+  function confetti(){
+    for(var i=0;i<22;i++){
+      var p = document.createElement('div');
+      p.className = 'confetti-piece';
+      p.style.left = Math.random()*100 + 'vw';
+      p.style.background = choice(CONFETTI_COLORS);
+      var dur = 1.1 + Math.random()*0.9;
+      p.style.animationDuration = dur + 's';
+      p.style.animationDelay = (Math.random()*0.25) + 's';
+      confettiLayer.appendChild(p);
+      (function(el, ms){ setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, ms); })(p, (dur+0.3)*1000);
+    }
+  }
+
+  // ---------- Reactii Rebe ----------
+  function rebeState(cls, ms){
+    rebe.classList.remove('happy','oops');
+    void rebe.offsetWidth;
+    rebe.classList.add(cls);
+    setTimeout(function(){ rebe.classList.remove(cls); }, ms);
+  }
+
+  // ---------- Miscarea lui Rebe ----------
+  function moveRebeTo(btn, animate){
+    if(!btn) return;
+    var sRect = stations.getBoundingClientRect();
+    var bRect = btn.getBoundingClientRect();
+    var left = bRect.left - sRect.left + bRect.width/2 - rebe.offsetWidth/2;
+    if(animate){
+      rebe.classList.add('walking');
+      rebe.style.left = left + 'px';
+      setTimeout(function(){ rebe.classList.remove('walking'); }, 1000);
+    } else {
+      rebe.classList.add('no-anim');
+      rebe.style.left = left + 'px';
+      void rebe.offsetWidth;
+      rebe.classList.remove('no-anim');
+    }
+  }
+  function activeBtn(){ return btnRow.querySelector('.game-btn[data-game="'+current+'"]'); }
+  function repositionRebe(){ moveRebeTo(activeBtn(), false); }
+
+  // ---------- Stele ----------
+  function addStar(){
+    stars++;
+    localStorage.setItem('rebe_stars', String(stars));
+    starCountEl.textContent = stars;
+    starCountEl.classList.add('pop');
+    setTimeout(function(){ starCountEl.classList.remove('pop'); }, 220);
+  }
+
+  // ---------- Raspunsuri ----------
+  // options: [{label, sub?, correct}]
+  function renderAnswers(options){
+    answersEl.innerHTML = '';
+    options.forEach(function(opt){
+      var b = document.createElement('button');
+      b.className = 'ans';
+      var big = document.createElement('span');
+      big.textContent = opt.label;
+      b.appendChild(big);
+      if(opt.sub){
+        var s = document.createElement('span');
+        s.className = 'sub';
+        s.textContent = opt.sub;
+        b.appendChild(s);
+      }
+      b.addEventListener('click', function(){ handleAnswer(b, opt.correct); });
+      answersEl.appendChild(b);
+    });
+  }
+
+  function handleAnswer(btn, correct){
+    if(locked || btn.disabled) return;
+    if(correct){
+      locked = true;
+      btn.classList.add('correct');
+      var all = answersEl.querySelectorAll('.ans');
+      for(var i=0;i<all.length;i++){ all[i].disabled = true; }
+      addStar();
+      goodSound();
+      confetti();
+      rebeState('happy', 700);
+      speak(choice(PRAISE));
+      setTimeout(function(){ locked = false; games[current].newRound(); }, 1600);
+    } else {
+      btn.classList.add('wrong');
+      btn.disabled = true;
+      badSound();
+      rebeState('oops', 500);
+      speak(choice(ENCOURAGE));
+    }
+  }
+
+  // optiuni numerice apropiate de raspunsul corect
+  function numberOptions(correct, count, lo, hi){
+    var set = {};
+    set[correct] = true;
+    var vals = [correct];
+    var tries = 0;
+    while(vals.length < count && tries < 60){
+      tries++;
+      var v = clamp(correct + randInt(-3,3), lo, hi);
+      if(!set[v]){ set[v] = true; vals.push(v); }
+    }
+    // completare de siguranta
+    var extra = lo;
+    while(vals.length < count){
+      if(!set[extra]){ set[extra] = true; vals.push(extra); }
+      extra++;
+      if(extra > hi) break;
+    }
+    shuffle(vals);
+    return vals.map(function(v){ return { label:String(v), correct: v === correct }; });
+  }
+
+  function emojiRow(n, emoji){
+    var out = '';
+    for(var i=0;i<n;i++){ out += emoji; }
+    return out;
+  }
+  function crossedRow(total, crossedCount, emoji){
+    var html = '';
+    for(var i=0;i<total;i++){
+      if(i < crossedCount){ html += '<span class="crossed">'+emoji+'</span>'; }
+      else { html += '<span>'+emoji+'</span>'; }
+    }
+    return html;
+  }
+
+  function shapeSVG(type, color){
+    var stroke = 'rgba(0,0,0,.18)';
+    var inner = '';
+    if(type === 'cerc'){ inner = '<circle cx="60" cy="60" r="48" fill="'+color+'" stroke="'+stroke+'" stroke-width="4"/>'; }
+    else if(type === 'pătrat'){ inner = '<rect x="14" y="14" width="92" height="92" rx="8" fill="'+color+'" stroke="'+stroke+'" stroke-width="4"/>'; }
+    else if(type === 'dreptunghi'){ inner = '<rect x="6" y="34" width="108" height="52" rx="8" fill="'+color+'" stroke="'+stroke+'" stroke-width="4"/>'; }
+    else { inner = '<polygon points="60,10 110,108 10,108" fill="'+color+'" stroke="'+stroke+'" stroke-width="4" stroke-linejoin="round"/>'; }
+    return '<svg class="shape-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">'+inner+'</svg>';
+  }
+
+  // ---------- Jocurile ----------
+  var games = {
+    count: {
+      title: '🔢 Numărăm',
+      intro: 'Numără cu atenție și spune câte lucruri vezi!',
+      newRound: function(){
+        var n = randInt(1,10);
+        var emoji = choice(EMOJIS);
+        questionEl.innerHTML =
+          '<div class="emoji-group">'+ emojiRow(n, emoji) +'</div>' +
+          '<div>Câte '+emoji+' vezi?</div>';
+        renderAnswers(numberOptions(n, 4, 1, 12));
+      }
+    },
+    add: {
+      title: '➕ Adunăm',
+      intro: 'Pune lucrurile la un loc și spune câte sunt în total!',
+      newRound: function(){
+        var s = randInt(1,10);
+        var a = randInt(0,s);
+        var b = s - a;
+        var emoji = choice(EMOJIS);
+        questionEl.innerHTML =
+          '<div class="equation">'+
+            '<span class="emoji-group" style="margin:0">'+emojiRow(a, emoji)+'</span>'+
+            '<span class="op">+</span>'+
+            '<span class="emoji-group" style="margin:0">'+emojiRow(b, emoji)+'</span>'+
+          '</div>'+
+          '<div>Cât fac '+a+' + '+b+' = ?</div>';
+        renderAnswers(numberOptions(s, 4, 0, 12));
+      }
+    },
+    sub: {
+      title: '➖ Scădem',
+      intro: 'Unele pleacă! Numără câte rămân.',
+      newRound: function(){
+        var t = randInt(2,10);
+        var s = randInt(1,t);
+        var r = t - s;
+        var emoji = choice(EMOJIS);
+        questionEl.innerHTML =
+          '<div class="emoji-group">'+ crossedRow(t, s, emoji) +'</div>'+
+          '<div>Erau '+t+', au plecat '+s+'.</div>'+
+          '<div>Cât fac '+t+' − '+s+' = ?</div>';
+        renderAnswers(numberOptions(r, 4, 0, 12));
+      }
+    },
+    compare: {
+      title: '⚖️ Comparăm',
+      intro: 'Care număr este mai mare? Alege semnul potrivit: <, = sau >.',
+      newRound: function(){
+        var a = randInt(0,20);
+        var b = (Math.random() < 0.3) ? a : randInt(0,20);
+        var sign = a < b ? '<' : (a > b ? '>' : '=');
+        questionEl.innerHTML =
+          '<div class="compare-line">'+a+' <span class="qmark">?</span> '+b+'</div>'+
+          '<div>Ce semn punem între numere?</div>';
+        var opts = [
+          { label:'<', sub:'mai mic', correct: sign === '<' },
+          { label:'=', sub:'egal',    correct: sign === '=' },
+          { label:'>', sub:'mai mare',correct: sign === '>' }
+        ];
+        renderAnswers(opts);
+      }
+    },
+    shapes: {
+      title: '🔺 Forme',
+      intro: 'Privește forma și spune cum se numește!',
+      newRound: function(){
+        var names = ['cerc','pătrat','dreptunghi','triunghi'];
+        var target = choice(names);
+        var color = choice(SHAPE_COLORS);
+        questionEl.innerHTML =
+          shapeSVG(target, color) +
+          '<div>Ce formă este aceasta?</div>';
+        var opts = shuffle(names.slice()).map(function(nm){
+          return { label: nm, correct: nm === target };
+        });
+        renderAnswers(opts);
+      }
+    }
+  };
+
+  // ---------- Schimbarea jocului ----------
+  function selectGame(name, animateWalk){
+    current = name;
+    locked = false;
+    gameBtns.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-game') === name); });
+    var g = games[name];
+    panelTitle.textContent = g.title;
+    speak(g.intro);
+    g.newRound();
+    moveRebeTo(activeBtn(), animateWalk);
+  }
+
+  // ---------- Evenimente ----------
+  gameBtns.forEach(function(b){
+    b.addEventListener('click', function(){
+      ensureAudio();
+      var name = b.getAttribute('data-game');
+      if(name === current){ games[current].newRound(); speak(games[current].intro); return; }
+      selectGame(name, true);
+    });
+  });
+
+  document.getElementById('againBtn').addEventListener('click', function(){
+    ensureAudio();
+    locked = false;
+    games[current].newRound();
+    rebeState('happy', 500);
+  });
+
+  muteBtn.addEventListener('click', function(){
+    muted = !muted;
+    localStorage.setItem('rebe_muted', muted ? '1' : '0');
+    muteBtn.textContent = muted ? '🔇' : '🔊';
+    if(!muted){ ensureAudio(); tone(660,0,0.15,'triangle'); }
+  });
+
+  document.addEventListener('pointerdown', ensureAudio, { once:true });
+  window.addEventListener('resize', repositionRebe);
+
+  // ---------- Start ----------
+  function start(){
+    selectGame('count', false);
+    // repozitionare dupa ce se incarca fontul/emoji-urile (latimea butoanelor se poate schimba)
+    setTimeout(repositionRebe, 60);
+    setTimeout(repositionRebe, 400);
+  }
+  if(document.readyState === 'complete'){ start(); }
+  else { window.addEventListener('load', start); }
+  // pozitionare initiala imediata
+  repositionRebe();
+})();
+</script>
+</body>
+</html>
