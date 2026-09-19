@@ -557,12 +557,12 @@
     if(us<10){
       steps.push('Adună <b>unitățile</b>: '+ua+' + '+ub+' = '+us+'.');
       steps.push('Adună <b>zecile</b>: '+ta+' + '+tb+' = '+(ta+tb)+' (adică '+((ta+tb)*10)+').');
-      steps.push('Pune-le împreună: '+((ta+tb)*10)+' + '+us+' = <b>'+(a+b)+'</b>.');
+      steps.push('Acum scrie zecile lângă unități și vei avea singur răspunsul.');
     } else {
       steps.push('Adună <b>unitățile</b>: '+ua+' + '+ub+' = '+us+'. Asta e o zece și '+(us-10)+' unități.');
       steps.push('Scrie '+(us-10)+' la unități și <b>ține minte 1 zece</b>.');
       steps.push('Adună <b>zecile</b>: '+ta+' + '+tb+' = '+(ta+tb)+', plus 1 reținut = '+(ta+tb+1)+' (adică '+((ta+tb+1)*10)+').');
-      steps.push('Pune-le împreună: '+((ta+tb+1)*10)+' + '+(us-10)+' = <b>'+(a+b)+'</b>.');
+      steps.push('Acum scrie zecile lângă unități și vei avea singur răspunsul.');
     }
     return steps;
   }
@@ -573,13 +573,13 @@
     if(ua>=ub){
       steps.push('Scade <b>unitățile</b>: '+ua+' − '+ub+' = '+(ua-ub)+'.');
       steps.push('Scade <b>zecile</b>: '+ta+' − '+tb+' = '+(ta-tb)+' (adică '+((ta-tb)*10)+').');
-      steps.push('Pune-le împreună: <b>'+(a-b)+'</b>.');
+      steps.push('Acum scrie zecile lângă unități și vei avea singur răspunsul.');
     } else {
       steps.push('La unități, '+ua+' este mai mic decât '+ub+'. <b>Împrumuți o zece</b>: '+ua+' + 10 = '+(ua+10)+'.');
       steps.push('Scade unitățile: '+(ua+10)+' − '+ub+' = '+(ua+10-ub)+'.');
       steps.push('Fiindcă ai împrumutat o zece, la zeci rămâne '+ta+' − 1 = '+(ta-1)+'.');
       steps.push('Scade zecile: '+(ta-1)+' − '+tb+' = '+(ta-1-tb)+' (adică '+((ta-1-tb)*10)+').');
-      steps.push('Pune-le împreună: <b>'+(a-b)+'</b>.');
+      steps.push('Acum scrie zecile lângă unități și vei avea singur răspunsul.');
     }
     return steps;
   }
@@ -592,21 +592,21 @@
       if(Math.random()<0.5){
         return { display:'<span class="blank">?</span> + '+b+' = '+c, answer:a, hintTitle:'Aflăm primul termen',
           steps:['La adunare, termenul care lipsește se află <b>scăzând</b> din rezultat termenul cunoscut.',
-                 'Scazi: '+c+' − '+b+' = <b>'+a+'</b>.'] };
+                 'Fă tu scăderea: '+c+' − '+b+' = ?'] };
       }
       return { display:a+' + <span class="blank">?</span> = '+c, answer:b, hintTitle:'Aflăm al doilea termen',
         steps:['La adunare, termenul care lipsește se află <b>scăzând</b> din rezultat termenul cunoscut.',
-               'Scazi: '+c+' − '+a+' = <b>'+b+'</b>.'] };
+               'Fă tu scăderea: '+c+' − '+a+' = ?'] };
     } else {
       var q=makeSub(level); a=q.a; b=q.b; c=a-b; // a - b = c
       if(Math.random()<0.5){
         return { display:'<span class="blank">?</span> − '+b+' = '+c, answer:a, hintTitle:'Aflăm descăzutul (primul număr)',
           steps:['Numărul din care se scade lipsește. Îl afli <b>adunând</b> rezultatul cu numărul scăzut.',
-                 'Aduni: '+c+' + '+b+' = <b>'+a+'</b>.'] };
+                 'Fă tu adunarea: '+c+' + '+b+' = ?'] };
       }
       return { display:a+' − <span class="blank">?</span> = '+c, answer:b, hintTitle:'Aflăm scăzătorul',
         steps:['Numărul care se scade lipsește. Îl afli <b>scăzând</b> rezultatul din primul număr.',
-               'Scazi: '+a+' − '+c+' = <b>'+b+'</b>.'] };
+               'Fă tu scăderea: '+a+' − '+c+' = ?'] };
     }
   }
 
@@ -642,7 +642,7 @@
       steps.push('Grupează '+pr[0]+' + '+pr[1]+' = '+s+' ('+(pr[0]%10)+' + '+(pr[1]%10)+' = 10).');
     });
     if(single!=null){ partials.push(single); steps.push('Îl păstrezi și pe '+single+'.'); }
-    steps.push('Acum aduni zecile rotunde: '+partials.join(' + ')+' = <b>'+total+'</b>.');
+    steps.push('Acum adună tu zecile rotunde între ele: '+partials.join(' + ')+' = ?');
     return steps;
   }
 
@@ -654,7 +654,7 @@
     return { text:nm+' are de parcurs cu bicicleta '+D+' km. A parcurs deja '+Tr+' km. Ce distanță mai are de parcurs?',
       answer:D-Tr, hintTitle:'Cât a mai rămas de parcurs?',
       steps:['„Mai are de parcurs" înseamnă cât lipsește până la total.',
-             'Scazi din total cât a făcut deja: '+D+' − '+Tr+' = <b>'+(D-Tr)+'</b> km.'] };
+             'Scazi din total cât a făcut deja: '+D+' − '+Tr+' = ? (km)'] };
   }
   function wpMissingPart(big){
     var nm = choice(NAMES);
@@ -663,7 +663,7 @@
     return { text:nm[0]+' a cules '+A+' de alune, iar împreună cu '+nm[1]+' au cules '+T+' de alune. Câte alune a cules '+nm[1]+'?',
       answer:T-A, hintTitle:'Câte a cules cealaltă fetiță?',
       steps:['„Împreună" înseamnă alunele amândurora la un loc: '+A+' + (alunele lui '+nm[1]+') = '+T+'.',
-             'Ca să afli partea care lipsește, scazi: '+T+' − '+A+' = <b>'+(T-A)+'</b> alune.'] };
+             'Ca să afli partea care lipsește, scazi: '+T+' − '+A+' = ? (alune)'] };
   }
   function wpMore(big){
     var A = big ? randInt(20,55) : randInt(6,18);
@@ -671,7 +671,7 @@
     return { text:'În clasă sunt '+A+' fete, iar băieți sunt cu '+B+' mai mulți. Câți băieți sunt în clasă?',
       answer:A+B, hintTitle:'„Cu mai mulți" înseamnă adunare',
       steps:['„Cu '+B+' mai mulți" înseamnă că iei numărul de fete și mai adaugi '+B+'.',
-             'Aduni: '+A+' + '+B+' = <b>'+(A+B)+'</b> băieți.'] };
+             'Fă tu adunarea: '+A+' + '+B+' = ? (băieți)'] };
   }
   function wpTotalTwo(big){
     var A = big ? randInt(21,55) : randInt(10,25);
@@ -679,14 +679,14 @@
     return { text:'În parcare sunt '+A+' mașini roșii și '+B+' mașini albastre. Câte mașini sunt în total?',
       answer:A+B, hintTitle:'Câte sunt în total?',
       steps:['„În total" înseamnă că le pui pe toate la un loc — aduni.',
-             'Aduni: '+A+' + '+B+' = <b>'+(A+B)+'</b> mașini.'] };
+             'Fă tu adunarea: '+A+' + '+B+' = ? (mașini)'] };
   }
   function wpThink(){
     var add = randInt(15,40), ans = randInt(6,40), target = add+ans;
     return { text:'Mă gândesc la un număr. Dacă îl adun cu '+add+', obțin '+target+'. La ce număr m-am gândit?',
       answer:ans, hintTitle:'Fă operația invers',
       steps:['Dacă la adunare rezultatul este '+target+', numărul necunoscut se află <b>scăzând</b>.',
-             'Scazi: '+target+' − '+add+' = <b>'+ans+'</b>.'] };
+             'Fă tu scăderea: '+target+' − '+add+' = ?'] };
   }
   function wpEnrolled(){
     var I = randInt(60,90), L = randInt(8,20), stayed = I-L;
@@ -694,7 +694,7 @@
     return { text:'În excursie s-au înscris la început '+I+' de copii. '+L+' au renunțat, dar s-au înscris alți copii până la un total de '+N+' copii. Câți copii s-au mai înscris?',
       answer:joined, hintTitle:'Problemă în doi pași',
       steps:['Pasul 1 — câți au rămas după ce '+L+' au renunțat: '+I+' − '+L+' = '+stayed+' copii.',
-             'Pasul 2 — de la '+stayed+' până la '+N+', câți s-au adăugat: '+N+' − '+stayed+' = <b>'+joined+'</b> copii.'] };
+             'Pasul 2 — de la '+stayed+' până la '+N+', află tu câți s-au adăugat: '+N+' − '+stayed+' = ?'] };
   }
   function wpSeats(){
     var B = randInt(12,25), M = randInt(3,8), girls = B+M, P = randInt(2,6);
@@ -702,7 +702,7 @@
     return { text:'Într-o excursie merg '+B+' băieți, fete cu '+M+' mai multe, doamna învățătoare și '+P+' părinți. Câte locuri trebuie să aibă autocarul?',
       answer:total, hintTitle:'Aduni toate persoanele',
       steps:['Întâi fetele: '+B+' + '+M+' = '+girls+' fete.',
-             'Apoi aduni tot: băieți + fete + 1 învățătoare + părinți: '+B+' + '+girls+' + 1 + '+P+' = <b>'+total+'</b> locuri.'] };
+             'Apoi adună tu tot: băieți + fete + 1 învățătoare + părinți: '+B+' + '+girls+' + 1 + '+P+' = ?'] };
   }
   function wpAnimals(){
     var deer = randInt(18,30), db = randInt(3,8), bears = deer-db, dw = randInt(6,14), wolves = deer+dw;
@@ -711,7 +711,7 @@
       answer:total, hintTitle:'Află pe rând fiecare animal',
       steps:['Urșii: cerbii sunt cu '+db+' mai mulți, deci urși sunt '+deer+' − '+db+' = '+bears+'.',
              'Lupii: cerbii sunt cu '+dw+' mai puțini, deci lupi sunt '+deer+' + '+dw+' = '+wolves+'.',
-             'Aduni toate animalele: '+deer+' + '+bears+' + '+wolves+' = <b>'+total+'</b>.'] };
+             'Acum adună tu toate animalele: '+deer+' + '+bears+' + '+wolves+' = ?'] };
   }
 
   function makeWord(level){

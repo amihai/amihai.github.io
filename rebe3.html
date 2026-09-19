@@ -501,12 +501,12 @@
     if(us<10){
       steps.push('Adună <b>unitățile</b>: '+ua+' + '+ub+' = '+us+'.');
       steps.push('Adună <b>zecile</b>: '+ta+' + '+tb+' = '+(ta+tb)+' (adică '+((ta+tb)*10)+').');
-      steps.push('Pune-le împreună: '+((ta+tb)*10)+' + '+us+' = <b>'+(a+b)+'</b>.');
+      steps.push('Acum scrie zecile lângă unități și vei avea singur răspunsul.');
     } else {
       steps.push('Adună <b>unitățile</b>: '+ua+' + '+ub+' = '+us+'. Asta e o zece și '+(us-10)+' unități.');
       steps.push('Scrie '+(us-10)+' la unități și <b>ține minte 1 zece</b>.');
       steps.push('Adună <b>zecile</b>: '+ta+' + '+tb+' = '+(ta+tb)+', plus 1 reținut = '+(ta+tb+1)+' (adică '+((ta+tb+1)*10)+').');
-      steps.push('Pune-le împreună: '+((ta+tb+1)*10)+' + '+(us-10)+' = <b>'+(a+b)+'</b>.');
+      steps.push('Acum scrie zecile lângă unități și vei avea singur răspunsul.');
     }
     return steps;
   }
@@ -515,13 +515,13 @@
     if(ua>=ub){
       steps.push('Scade <b>unitățile</b>: '+ua+' − '+ub+' = '+(ua-ub)+'.');
       steps.push('Scade <b>zecile</b>: '+ta+' − '+tb+' = '+(ta-tb)+' (adică '+((ta-tb)*10)+').');
-      steps.push('Pune-le împreună: <b>'+(a-b)+'</b>.');
+      steps.push('Acum scrie zecile lângă unități și vei avea singur răspunsul.');
     } else {
       steps.push('La unități, '+ua+' este mai mic decât '+ub+'. <b>Împrumuți o zece</b>: '+ua+' + 10 = '+(ua+10)+'.');
       steps.push('Scade unitățile: '+(ua+10)+' − '+ub+' = '+(ua+10-ub)+'.');
       steps.push('Fiindcă ai împrumutat o zece, la zeci rămâne '+ta+' − 1 = '+(ta-1)+'.');
       steps.push('Scade zecile: '+(ta-1)+' − '+tb+' = '+(ta-1-tb)+' (adică '+((ta-1-tb)*10)+').');
-      steps.push('Pune-le împreună: <b>'+(a-b)+'</b>.');
+      steps.push('Acum scrie zecile lângă unități și vei avea singur răspunsul.');
     }
     return steps;
   }
@@ -542,7 +542,7 @@
         return { calc:a+' + <span class="blank">?</span> + '+c+' = ', target:T, answer:x,
           hintTitle:'Căsuță într-un calcul cu trei numere',
           steps:['Aduni întâi numerele cunoscute: '+a+' + '+c+' = '+(a+c)+'.',
-                 'Vezi cât mai lipsește până la '+T+': '+T+' − '+(a+c)+' = <b>'+x+'</b>.'] };
+                 'Acum vezi tu cât mai lipsește până la '+T+': '+T+' − '+(a+c)+' = ?'] };
       }
     }
     if(Math.random()<0.5){
@@ -551,22 +551,22 @@
         return { calc:'<span class="blank">?</span> + '+pb+' = ', target:PT, answer:pa,
           hintTitle:'Aflăm termenul care lipsește',
           steps:['Vrei ca □ + '+pb+' să facă '+PT+' (numărul din stea).',
-                 'Termenul lipsă = suma − celălalt termen: '+PT+' − '+pb+' = <b>'+pa+'</b>.'].concat(subHint(PT,pb)) };
+                 'Termenul lipsă = suma − celălalt termen. Deci calculează: '+PT+' − '+pb+'.'].concat(subHint(PT,pb)) };
       return { calc:pa+' + <span class="blank">?</span> = ', target:PT, answer:pb,
         hintTitle:'Aflăm termenul care lipsește',
         steps:['Vrei ca '+pa+' + □ să facă '+PT+' (numărul din stea).',
-               'Termenul lipsă = suma − celălalt termen: '+PT+' − '+pa+' = <b>'+pb+'</b>.'].concat(subHint(PT,pa)) };
+               'Termenul lipsă = suma − celălalt termen. Deci calculează: '+PT+' − '+pa+'.'].concat(subHint(PT,pa)) };
     } else {
       var q=makeSub(level), qa=q.a, qb=q.b, QT=qa-qb;
       if(Math.random()<0.5)
         return { calc:'<span class="blank">?</span> − '+qb+' = ', target:QT, answer:qa,
           hintTitle:'Aflăm descăzutul (numărul din care se scade)',
           steps:['Vrei ca □ − '+qb+' să facă '+QT+' (numărul din stea).',
-                 'Descăzutul lipsește. Îl afli <b>adunând</b>: '+QT+' + '+qb+' = <b>'+qa+'</b>.'].concat(addHint(QT,qb)) };
+                 'Descăzutul lipsește. Îl afli <b>adunând</b>. Deci calculează: '+QT+' + '+qb+'.'].concat(addHint(QT,qb)) };
       return { calc:qa+' − <span class="blank">?</span> = ', target:QT, answer:qb,
         hintTitle:'Aflăm scăzătorul (numărul care se scade)',
         steps:['Vrei ca '+qa+' − □ să facă '+QT+' (numărul din stea).',
-               'Scăzătorul lipsește. Îl afli <b>scăzând</b>: '+qa+' − '+QT+' = <b>'+qb+'</b>.'].concat(subHint(qa,QT)) };
+               'Scăzătorul lipsește. Îl afli <b>scăzând</b>. Deci calculează: '+qa+' − '+QT+'.'].concat(subHint(qa,QT)) };
     }
   }
 
@@ -634,7 +634,7 @@
       ]);
       return { eq:eq, num:num, opts:opts, hintTitle:'Denumirile la adunare',
         steps:['La <b>adunare</b>: numerele pe care le aduni se numesc <b>termeni</b>, iar rezultatul se numește <b>sumă</b>.',
-               'Aici '+num+(correct==='suma'?' este rezultatul, deci este <b>suma</b>.':' este unul dintre numerele adunate, deci este <b>termen</b>.')] };
+               'Uită-te unde stă numărul '+num+': dacă e unul dintre numerele adunate, e termen; dacă e rezultatul (după semnul =), e sumă. Acum alege tu!'] };
     } else {
       var q=makeSub(level), sa=q.a, sb=q.b, sc=sa-sb, w=choice(['a','b','c']);
       var snum = w==='a'?sa:(w==='b'?sb:sc);
@@ -647,7 +647,7 @@
       ]);
       return { eq:seq, num:snum, opts:sopts, hintTitle:'Denumirile la scădere',
         steps:['La <b>scădere</b>: primul număr (din care scazi) este <b>descăzutul</b>, al doilea (pe care îl scazi) este <b>scăzătorul</b>, iar rezultatul este <b>diferența</b>.',
-               'Aici '+snum+' este <b>'+scorrect+'</b>.'] };
+               'Uită-te unde stă numărul '+snum+' în calcul: primul, al doilea sau rezultatul (după semnul =)? Apoi alege tu denumirea potrivită!'] };
     }
   }
 
