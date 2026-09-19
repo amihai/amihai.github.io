@@ -390,6 +390,41 @@
   function goodSound(){ ensureAudio(); tone(523,0,0.16,'triangle'); tone(659,0.12,0.16,'triangle'); tone(784,0.24,0.28,'triangle'); }
   function badSound(){ ensureAudio(); tone(300,0,0.18,'sine'); tone(220,0.14,0.22,'sine'); }
 
+  // sunet blând de valuri (cât timp Rebe înoată)
+  var waveNodes = null;
+  function startWaves(){
+    if(!audioCtx || muted) return;
+    stopWaves();
+    var len = Math.floor(audioCtx.sampleRate * 2);
+    var buffer = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+    var data = buffer.getChannelData(0);
+    var last = 0;
+    for(var i=0;i<len;i++){ var w = Math.random()*2-1; last = (last + 0.02*w)/1.02; data[i] = last*3.2; }
+    var src = audioCtx.createBufferSource(); src.buffer = buffer; src.loop = true;
+    var filter = audioCtx.createBiquadFilter(); filter.type='lowpass'; filter.frequency.value=650; filter.Q.value=0.6;
+    var gain = audioCtx.createGain(); gain.gain.value = 0.0001;
+    var lfo = audioCtx.createOscillator(); lfo.type='sine'; lfo.frequency.value=0.32;
+    var lfoGain = audioCtx.createGain(); lfoGain.gain.value = 0.05;
+    lfo.connect(lfoGain); lfoGain.connect(gain.gain);
+    var t0 = audioCtx.currentTime;
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(0.07, t0+1.2);
+    src.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+    src.start(); lfo.start();
+    waveNodes = { src:src, lfo:lfo, gain:gain };
+  }
+  function stopWaves(){
+    if(!waveNodes || !audioCtx) return;
+    var n = waveNodes; waveNodes = null;
+    try{
+      var t = audioCtx.currentTime;
+      n.gain.gain.cancelScheduledValues(t);
+      n.gain.gain.setValueAtTime(n.gain.gain.value, t);
+      n.gain.gain.linearRampToValueAtTime(0.0001, t+0.6);
+    }catch(e){}
+    setTimeout(function(){ try{ n.src.stop(); n.lfo.stop(); }catch(e){} }, 700);
+  }
+
   // ---------- Confetti ----------
   function confetti(){
     for(var i=0;i<22;i++){
@@ -413,8 +448,9 @@
     swimLayer.classList.add('on');
     speak('Bravo! Rebe înoată puțin! 🏊‍♀️🌊🎉');
     goodSound();
+    ensureAudio(); startWaves();
     clearTimeout(swim._t);
-    swim._t = setTimeout(function(){ swimLayer.classList.remove('on'); }, 10000);
+    swim._t = setTimeout(function(){ swimLayer.classList.remove('on'); stopWaves(); }, 10000);
   }
 
   // ---------- Reactii Rebe ----------
@@ -659,7 +695,7 @@
     muted = !muted;
     localStorage.setItem('rebe_muted', muted ? '1' : '0');
     muteBtn.textContent = muted ? '🔇' : '🔊';
-    if(!muted){ ensureAudio(); tone(660,0,0.15,'triangle'); }
+    if(!muted){ ensureAudio(); tone(660,0,0.15,'triangle'); } else { stopWaves(); }
   });
 
   document.addEventListener('pointerdown', ensureAudio, { once:true });
