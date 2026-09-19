@@ -331,7 +331,6 @@
   var muteBtn = document.getElementById('muteBtn');
   var confettiLayer = document.getElementById('confetti');
   var swimLayer = document.getElementById('swimLayer');
-  var correctCount = 0;
   var gameBtns = Array.prototype.slice.call(btnRow.querySelectorAll('.game-btn'));
 
   // ---------- Stare ----------
@@ -487,8 +486,7 @@
       goodSound();
       confetti();
       rebeState('happy', 700);
-      correctCount++;
-      if(correctCount % 10 === 0){ swim(); } else { speak(choice(PRAISE)); }
+      if(stars % 10 === 0){ swim(); } else { speak(choice(PRAISE)); }
       setTimeout(function(){ locked = false; games[current].newRound(); }, 1600);
     } else {
       btn.classList.add('wrong');
