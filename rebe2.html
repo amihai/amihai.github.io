@@ -242,6 +242,30 @@
     0%{transform:translateY(-24px) rotate(0);opacity:1}
     100%{transform:translateY(105vh) rotate(720deg);opacity:.9}
   }
+
+  /* Rebe înoată — recompensă la fiecare 10 răspunsuri corecte */
+  .swim-layer{position:fixed;inset:0;z-index:48;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .5s;}
+  .swim-layer.on{opacity:1;}
+  .swim-water{position:absolute;inset:0;background:linear-gradient(180deg,rgba(56,189,248,0) 34%,rgba(56,189,248,.14) 60%,rgba(14,165,233,.22) 100%);}
+  .swim-wave{position:absolute;left:0;width:220%;height:20px;top:50%;
+    background:radial-gradient(circle at 24px 20px,rgba(255,255,255,0) 16px,rgba(255,255,255,.55) 17px,rgba(255,255,255,0) 19px) repeat-x;
+    background-size:64px 20px;animation:swim-wave 1.8s linear infinite;opacity:.5;}
+  @keyframes swim-wave{from{transform:translateX(0)}to{transform:translateX(-64px)}}
+  .swimmer{position:absolute;top:42%;left:0;width:190px;height:112px;
+    animation:swim-across 10s linear forwards, swim-bob 1.1s ease-in-out infinite;}
+  @keyframes swim-across{from{transform:translateX(-26vw)}to{transform:translateX(126vw)}}
+  @keyframes swim-bob{0%,100%{margin-top:0}50%{margin-top:-12px}}
+  .swim-svg{width:100%;height:100%;overflow:visible;display:block;}
+  .swim-head{position:absolute;right:2px;top:2px;width:52px;height:auto;transform:rotate(-16deg);filter:drop-shadow(0 2px 3px rgba(0,0,0,.2));}
+  .swim-arm-f,.swim-arm-b,.swim-leg-a,.swim-leg-b,.swim-bubble{transform-box:view-box;}
+  .swim-arm-f{transform-origin:145px 58px;animation:swim-stroke .8s ease-in-out infinite;}
+  .swim-arm-b{transform-origin:145px 60px;animation:swim-stroke .8s ease-in-out infinite;animation-delay:-.4s;}
+  @keyframes swim-stroke{0%{transform:rotate(-38deg)}50%{transform:rotate(48deg)}100%{transform:rotate(-38deg)}}
+  .swim-leg-a{transform-origin:55px 64px;animation:swim-kick .34s ease-in-out infinite;}
+  .swim-leg-b{transform-origin:55px 70px;animation:swim-kick .34s ease-in-out infinite;animation-delay:-.17s;}
+  @keyframes swim-kick{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}
+  .swim-bubble{fill:#fff;opacity:.7;animation:swim-bub 1.3s ease-in infinite;}
+  @keyframes swim-bub{0%{opacity:.7;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(-34px,-20px) scale(.3)}}
 </style>
 </head>
 <body>
@@ -324,6 +348,24 @@
   <footer>Făcut cu drag pentru Rebe 💖</footer>
 </div>
 
+<div class="swim-layer" id="swimLayer" aria-hidden="true">
+  <div class="swim-water"></div>
+  <div class="swim-wave"></div>
+  <div class="swimmer">
+    <svg class="swim-svg" viewBox="0 0 200 112" xmlns="http://www.w3.org/2000/svg">
+      <circle class="swim-bubble" cx="34" cy="40" r="4" style="animation-delay:-.2s"/>
+      <circle class="swim-bubble" cx="22" cy="62" r="3" style="animation-delay:-.7s"/>
+      <circle class="swim-bubble" cx="40" cy="74" r="5" style="animation-delay:-1s"/>
+      <g class="swim-leg-a"><line x1="55" y1="62" x2="16" y2="52" stroke="#ffd9b3" stroke-width="9" stroke-linecap="round"/><ellipse cx="13" cy="51" rx="6" ry="4" fill="#e11d6b"/></g>
+      <g class="swim-leg-b" opacity=".9"><line x1="55" y1="70" x2="16" y2="82" stroke="#f0b892" stroke-width="9" stroke-linecap="round"/><ellipse cx="13" cy="83" rx="6" ry="4" fill="#e11d6b"/></g>
+      <g class="swim-arm-b" opacity=".8"><line x1="145" y1="60" x2="170" y2="34" stroke="#f0b892" stroke-width="8" stroke-linecap="round"/><circle cx="171" cy="32" r="5" fill="#f0b892"/></g>
+      <rect x="45" y="50" width="106" height="28" rx="14" fill="#ff5ea8"/>
+      <rect x="72" y="53" width="52" height="9" rx="4" fill="#ff86c0"/>
+      <g class="swim-arm-f"><line x1="145" y1="58" x2="172" y2="86" stroke="#ffd9b3" stroke-width="8" stroke-linecap="round"/><circle cx="173" cy="88" r="5" fill="#ffd9b3"/></g>
+    </svg>
+    <img class="swim-head" src="rebe-head.png" alt="">
+  </div>
+</div>
 <div class="confetti-layer" id="confetti"></div>
 
 <script>
@@ -341,6 +383,8 @@
   var starCountEl = document.getElementById('starCount');
   var muteBtn = document.getElementById('muteBtn');
   var confettiLayer = document.getElementById('confetti');
+  var swimLayer = document.getElementById('swimLayer');
+  var correctCount = 0;
   var hintBtn = document.getElementById('hintBtn');
   var hintBox = document.getElementById('hintBox');
   var levelbar = document.getElementById('levelbar');
@@ -419,6 +463,18 @@
     }
   }
 
+  // ---------- Rebe înoată (recompensă la fiecare 10 corecte) ----------
+  function swim(){
+    if(!swimLayer) return;
+    var s = swimLayer.querySelector('.swimmer');
+    if(s){ s.style.animation = 'none'; void s.offsetWidth; s.style.animation = ''; }
+    swimLayer.classList.add('on');
+    speak('Bravo! Rebe înoată puțin! 🏊‍♀️🌊🎉');
+    goodSound();
+    clearTimeout(swim._t);
+    swim._t = setTimeout(function(){ swimLayer.classList.remove('on'); }, 10000);
+  }
+
   // ---------- Reactii Rebe ----------
   function rebeState(cls, ms){
     rebe.classList.remove('happy','oops');
@@ -482,7 +538,8 @@
       goodSound();
       confetti();
       rebeState('happy', 700);
-      speak(choice(PRAISE));
+      correctCount++;
+      if(correctCount % 10 === 0){ swim(); } else { speak(choice(PRAISE)); }
       setTimeout(function(){ locked = false; games[current].newRound(); }, 1600);
     } else {
       btn.classList.add('wrong');
