@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rebe învață matematica -II- </title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pink:#ff5ea8;
+    --pink-dark:#e23e8c;
+    --purple:#8b5cf6;
+    --blue:#38bdf8;
+    --green:#34d399;
+    --yellow:#fbbf24;
+    --orange:#fb923c;
+    --ink:#3b2b57;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Fredoka','Comic Sans MS','Chalkboard SE','Comic Neue',system-ui,-apple-system,sans-serif;
+    color:var(--ink);
+    background:linear-gradient(180deg,#a9e0fb 0%,#c9edff 42%,#eaf8ff 100%);
+    min-height:100vh;
+    padding:12px;
+    -webkit-user-select:none;user-select:none;
+  }
+  .wrap{max-width:920px;margin:0 auto;}
+
+  /* Cer cu nori care plutesc lent spre dreapta */
+  .sky{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;}
+  .cloud-wrap{position:absolute;left:0;animation:drift linear infinite;will-change:transform;}
+  .cloud{position:relative;width:130px;height:42px;background:#fff;border-radius:42px;opacity:.85;filter:blur(1px);}
+  .cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%;}
+  .cloud::before{width:58px;height:58px;top:-26px;left:20px;}
+  .cloud::after{width:42px;height:42px;top:-18px;left:66px;}
+  @keyframes drift{from{transform:translateX(-35vw)}to{transform:translateX(135vw)}}
+
+  /* Header */
+  header{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:var(--card);
+    border-radius:22px;
+    padding:12px 18px;
+    box-shadow:0 8px 22px rgba(139,92,246,.15);
+    border:3px solid #fff;
+  }
+  header h1{
+    font-size:clamp(18px,4.2vw,28px);
+    margin:0;font-weight:700;
+    background:linear-gradient(90deg,var(--pink),var(--purple),var(--blue));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .stars{
+    display:flex;align-items:center;gap:6px;
+    background:linear-gradient(90deg,#fff7d6,#ffe9a8);
+    border:2px solid #ffd766;
+    padding:8px 14px;border-radius:999px;
+    font-weight:700;font-size:clamp(16px,3.5vw,20px);
+    white-space:nowrap;
+  }
+  #starCount{display:inline-block;min-width:1ch;transition:transform .2s;}
+  #starCount.pop{transform:scale(1.6);}
+  .mute-btn{
+    border:none;background:#f1ecff;border-radius:50%;
+    width:44px;height:44px;font-size:22px;cursor:pointer;line-height:1;
+    box-shadow:0 3px 0 #d9cffb;
+  }
+  .mute-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #d9cffb;}
+
+  /* Stations (Rebe + game buttons) */
+  .stations{position:relative;padding-top:118px;margin-top:16px;}
+  .btn-row{display:flex;gap:8px;justify-content:center;}
+  .game-btn{
+    flex:1 1 0;min-width:0;
+    background:var(--card);
+    border:3px solid #fff;
+    border-radius:20px;
+    padding:12px 4px 10px;
+    cursor:pointer;
+    box-shadow:0 6px 16px rgba(0,0,0,.08);
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    transition:transform .15s, box-shadow .15s, border-color .15s;
+    font-family:inherit;color:var(--ink);
+  }
+  .game-btn .ic{font-size:clamp(22px,5.5vw,32px);line-height:1;}
+  .game-btn .lb{font-size:clamp(10px,2.4vw,14px);font-weight:600;}
+  .game-btn:hover{transform:translateY(-3px);}
+  .game-btn.active{
+    border-color:var(--pink);
+    box-shadow:0 8px 20px rgba(255,94,168,.35);
+    transform:translateY(-4px);
+    background:linear-gradient(180deg,#fff,#fff0f7);
+  }
+
+  /* Rebe */
+  .rebe{
+    position:absolute;top:0;left:0;width:96px;height:118px;
+    transition:left 1s cubic-bezier(.34,1.2,.64,1);
+    z-index:5;pointer-events:none;
+  }
+  .rebe.no-anim{transition:none;}
+  .rebe-inner{
+    position:absolute;inset:0;
+    transform-origin:50% 100%;
+    animation:bob 2.4s ease-in-out infinite;
+  }
+  .rebe.walking .rebe-inner{animation:waddle .34s ease-in-out infinite;}
+  .rebe.happy   .rebe-inner{animation:jump .7s ease;}
+  .rebe.oops    .rebe-inner{animation:shake .5s ease;}
+  .rebe-head{
+    position:absolute;top:0;left:50%;transform:translateX(-50%);
+    width:58px;height:auto;z-index:2;
+    filter:drop-shadow(0 2px 3px rgba(0,0,0,.2));
+  }
+  .rebe-body{
+    position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+    width:58px;height:auto;z-index:1;overflow:visible;
+  }
+  .arm-wave{transform-box:fill-box;transform-origin:0% 100%;animation:wave 1.6s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  @keyframes waddle{0%,100%{transform:translateY(-3px) rotate(-5deg)}50%{transform:translateY(-3px) rotate(5deg)}}
+  @keyframes jump{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-30px) scale(1.06) rotate(-4deg)}55%{transform:translateY(0) scale(1)}70%{transform:translateY(-14px) rotate(3deg)}100%{transform:translateY(0)}}
+  @keyframes shake{0%,100%{transform:rotate(0)}20%{transform:rotate(-9deg)}40%{transform:rotate(9deg)}60%{transform:rotate(-6deg)}80%{transform:rotate(6deg)}}
+  @keyframes wave{0%,100%{transform:rotate(0)}50%{transform:rotate(-22deg)}}
+
+  /* Speech bubble */
+  .speech{
+    position:relative;margin:6px auto 0;max-width:560px;
+    background:#fff;border:3px solid var(--purple);
+    border-radius:18px;padding:12px 18px;text-align:center;
+    font-size:clamp(15px,3.4vw,19px);font-weight:500;
+    box-shadow:0 6px 14px rgba(139,92,246,.18);
+    animation:pop .3s ease;
+  }
+  .speech::after{
+    content:"";position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+    border:8px solid transparent;border-bottom-color:var(--purple);
+  }
+  @keyframes pop{0%{transform:scale(.85);opacity:0}100%{transform:scale(1);opacity:1}}
+
+  /* Bara de dificultate */
+  .levelbar{
+    display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;
+    background:var(--card);border:3px solid #fff;border-radius:18px;
+    padding:10px 12px;margin-top:14px;
+    box-shadow:0 6px 16px rgba(0,0,0,.06);
+  }
+  .levelbar .lab{font-weight:700;font-size:clamp(13px,3vw,16px);margin-right:2px;}
+  .levelbar .lvl-end{font-size:clamp(11px,2.6vw,13px);color:#8a7fb5;font-weight:600;}
+  .lvl{
+    font-family:inherit;font-weight:700;color:var(--ink);
+    background:#fff;border:3px solid #e6e0ff;border-radius:14px;
+    width:clamp(38px,10vw,48px);height:clamp(38px,10vw,48px);
+    font-size:clamp(16px,4vw,20px);cursor:pointer;
+    box-shadow:0 4px 0 #ded6ff;transition:transform .1s;
+  }
+  .lvl:active{transform:translateY(2px);box-shadow:0 2px 0 #ded6ff;}
+  .lvl.active{
+    background:linear-gradient(180deg,#fff,#eafaf0);
+    border-color:var(--green);box-shadow:0 4px 0 #79e0b3;transform:translateY(-2px);
+  }
+
+  /* Game panel */
+  .panel{
+    background:var(--card);border-radius:26px;margin-top:16px;
+    padding:20px 16px 26px;text-align:center;
+    box-shadow:0 10px 28px rgba(0,0,0,.10);border:3px solid #fff;
+  }
+  .panel-title{font-size:clamp(18px,4vw,24px);font-weight:700;margin:0 0 10px;}
+  .question{font-size:clamp(20px,5vw,30px);font-weight:700;margin:6px 0 14px;}
+  .qmark{color:var(--pink);}
+
+  .mixed-eq{
+    font-size:clamp(24px,6vw,40px);font-weight:700;color:var(--ink);
+    margin:12px 0 10px;line-height:1.35;
+  }
+  .word-problem{
+    font-size:clamp(17px,4vw,22px);font-weight:600;line-height:1.45;
+    max-width:600px;margin:6px auto 16px;
+  }
+  .blank{
+    display:inline-block;min-width:1.1em;padding:0 .18em;
+    color:var(--pink);border-bottom:4px solid var(--pink);
+  }
+
+  /* Answers */
+  .answers{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px;}
+  .ans{
+    font-family:inherit;font-weight:700;color:var(--ink);
+    background:#fff;border:3px solid #e6e0ff;border-radius:18px;
+    min-width:84px;padding:14px 18px;cursor:pointer;
+    font-size:clamp(22px,5vw,30px);line-height:1.05;
+    box-shadow:0 5px 0 #ded6ff;transition:transform .1s;
+    display:flex;flex-direction:column;align-items:center;gap:2px;
+  }
+  .ans:active{transform:translateY(3px);box-shadow:0 2px 0 #ded6ff;}
+  .ans:disabled{cursor:default;}
+  .ans.correct{background:#d7fbe8;border-color:var(--green);box-shadow:0 5px 0 #79e0b3;animation:jump .6s ease;}
+  .ans.wrong{background:#ffe0e6;border-color:var(--pink-dark);box-shadow:0 5px 0 #f2a6ba;opacity:.85;animation:shake .4s ease;}
+
+  /* Butoane control */
+  .controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px;}
+  .hint-btn{
+    font-family:inherit;font-weight:700;
+    background:linear-gradient(90deg,var(--yellow),var(--orange));
+    color:#7a4b12;border:none;border-radius:16px;padding:10px 20px;
+    font-size:16px;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,.14);
+  }
+  .hint-btn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.14);}
+  .again{
+    font-family:inherit;font-weight:700;
+    background:linear-gradient(90deg,var(--blue),var(--purple));
+    color:#fff;border:none;border-radius:16px;padding:10px 20px;
+    font-size:16px;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,.12);
+  }
+  .again:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.12);}
+
+  /* Cutia cu indiciu */
+  .hint-box{
+    margin:16px auto 0;max-width:580px;text-align:left;
+    background:#fffbe9;border:3px solid var(--yellow);border-radius:18px;
+    padding:14px 16px;box-shadow:0 6px 14px rgba(251,191,36,.2);
+    animation:pop .3s ease;
+  }
+  .hint-title{font-weight:700;font-size:clamp(16px,3.6vw,20px);margin-bottom:8px;color:#a15c00;}
+  .steps{margin:0;padding-left:22px;}
+  .steps li{font-size:clamp(15px,3.4vw,18px);line-height:1.55;margin-bottom:8px;}
+  .steps li:last-child{margin-bottom:0;}
+  .steps b{color:var(--pink-dark);}
+
+  footer{text-align:center;margin:18px 0 6px;color:#9a8fc0;font-size:14px;font-weight:500;}
+
+  /* Confetti */
+  .confetti-layer{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:50;}
+  .confetti-piece{position:absolute;top:-24px;width:11px;height:15px;border-radius:2px;animation:fall linear forwards;}
+  @keyframes fall{
+    0%{transform:translateY(-24px) rotate(0);opacity:1}
+    100%{transform:translateY(105vh) rotate(720deg);opacity:.9}
+  }
+</style>
+</head>
+<body>
+<div class="sky" aria-hidden="true">
+  <div class="cloud-wrap" style="top:5%;animation-duration:78s;animation-delay:-6s"><div class="cloud" style="transform:scale(1.1);opacity:.9"></div></div>
+  <div class="cloud-wrap" style="top:15%;animation-duration:110s;animation-delay:-55s"><div class="cloud" style="transform:scale(.6);opacity:.72"></div></div>
+  <div class="cloud-wrap" style="top:28%;animation-duration:64s;animation-delay:-22s"><div class="cloud" style="transform:scale(1.4);opacity:.85"></div></div>
+  <div class="cloud-wrap" style="top:45%;animation-duration:125s;animation-delay:-85s"><div class="cloud" style="transform:scale(.5);opacity:.68"></div></div>
+  <div class="cloud-wrap" style="top:60%;animation-duration:92s;animation-delay:-38s"><div class="cloud" style="transform:scale(.95);opacity:.8"></div></div>
+  <div class="cloud-wrap" style="top:75%;animation-duration:84s;animation-delay:-63s"><div class="cloud" style="transform:scale(1.2);opacity:.85"></div></div>
+</div>
+<div class="wrap">
+  <header>
+    <h1>🌸 Rebe și numerele până la 100</h1>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="stars">⭐ <span id="starCount">0</span></div>
+      <button class="mute-btn" id="muteBtn" title="Pornește/oprește sunetul">🔊</button>
+    </div>
+  </header>
+
+  <div class="stations">
+    <div class="rebe" id="rebe">
+      <div class="rebe-inner">
+        <img class="rebe-head" alt="Rebe" src="rebe-head.png">
+        <svg class="rebe-body" viewBox="17 44 66 84" xmlns="http://www.w3.org/2000/svg">
+          <rect x="41" y="104" width="7" height="16" rx="3" fill="#ffd9b3"/>
+          <rect x="52" y="104" width="7" height="16" rx="3" fill="#ffd9b3"/>
+          <ellipse cx="44" cy="122" rx="8" ry="5" fill="#e11d6b"/>
+          <ellipse cx="56" cy="122" rx="8" ry="5" fill="#e11d6b"/>
+          <rect x="45" y="49" width="10" height="13" rx="4" fill="#f0b892"/>
+          <polygon points="41,58 59,58 72,108 28,108" fill="#ff5ea8"/>
+          <polygon points="41,58 59,58 62,74 38,74" fill="#ff86c0"/>
+          <circle cx="42" cy="88" r="2.4" fill="#fff"/>
+          <circle cx="55" cy="82" r="2.4" fill="#fff"/>
+          <circle cx="50" cy="98" r="2.4" fill="#fff"/>
+          <circle cx="60" cy="97" r="2.4" fill="#fff"/>
+          <line x1="42" y1="64" x2="27" y2="84" stroke="#ffd9b3" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="26" cy="85" r="4.5" fill="#ffd9b3"/>
+          <g class="arm-wave">
+            <line x1="58" y1="64" x2="76" y2="50" stroke="#ffd9b3" stroke-width="7" stroke-linecap="round"/>
+            <circle cx="77" cy="49" r="4.5" fill="#ffd9b3"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="btn-row" id="btnRow">
+      <button class="game-btn" data-game="add"><span class="ic">➕</span><span class="lb">Adunăm</span></button>
+      <button class="game-btn" data-game="sub"><span class="ic">➖</span><span class="lb">Scădem</span></button>
+      <button class="game-btn" data-game="missing"><span class="ic">❓</span><span class="lb">Nr. lipsă</span></button>
+      <button class="game-btn" data-game="group"><span class="ic">🧩</span><span class="lb">Grupăm</span></button>
+      <button class="game-btn" data-game="word"><span class="ic">📖</span><span class="lb">Probleme</span></button>
+    </div>
+  </div>
+
+  <div class="speech" id="speech">Bună! Eu sunt Rebe. Hai să exersăm adunarea și scăderea până la 100! 💖</div>
+
+  <div class="levelbar" id="levelbar">
+    <span class="lab">Nivel:</span>
+    <span class="lvl-end">😀</span>
+    <button class="lvl" data-lvl="1">1</button>
+    <button class="lvl" data-lvl="2">2</button>
+    <button class="lvl" data-lvl="3">3</button>
+    <button class="lvl" data-lvl="4">4</button>
+    <button class="lvl" data-lvl="5">5</button>
+    <span class="lvl-end">🤓</span>
+  </div>
+
+  <div class="panel">
+    <h2 class="panel-title" id="panelTitle"></h2>
+    <div id="question" class="question"></div>
+    <div id="answers" class="answers"></div>
+    <div class="controls">
+      <button class="hint-btn" id="hintBtn">💡 Indiciu</button>
+      <button class="again" id="againBtn">🔄 Altă întrebare</button>
+    </div>
+    <div id="hintBox" class="hint-box" hidden></div>
+  </div>
+
+  <footer>Făcut cu drag pentru Rebe 💖</footer>
+</div>
+
+<div class="confetti-layer" id="confetti"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Elemente ----------
+  var rebe = document.getElementById('rebe');
+  var stations = document.querySelector('.stations');
+  var btnRow = document.getElementById('btnRow');
+  var speech = document.getElementById('speech');
+  var panelTitle = document.getElementById('panelTitle');
+  var questionEl = document.getElementById('question');
+  var answersEl = document.getElementById('answers');
+  var starCountEl = document.getElementById('starCount');
+  var muteBtn = document.getElementById('muteBtn');
+  var confettiLayer = document.getElementById('confetti');
+  var hintBtn = document.getElementById('hintBtn');
+  var hintBox = document.getElementById('hintBox');
+  var levelbar = document.getElementById('levelbar');
+  var gameBtns = Array.prototype.slice.call(btnRow.querySelectorAll('.game-btn'));
+  var lvlBtns = Array.prototype.slice.call(levelbar.querySelectorAll('.lvl'));
+
+  // ---------- Stare ----------
+  var stars = parseInt(localStorage.getItem('rebe_stars') || '0', 10) || 0;
+  var muted = localStorage.getItem('rebe_muted') === '1';
+  var level = parseInt(localStorage.getItem('rebe2_level') || '1', 10) || 1;
+  if(level < 1 || level > 5) level = 1;
+  var current = 'add';
+  var locked = false; // blocheaza dupa raspuns corect, pana la runda urmatoare
+  var curHint = '';    // indiciul pentru intrebarea curenta
+
+  starCountEl.textContent = stars;
+  muteBtn.textContent = muted ? '🔇' : '🔊';
+
+  // ---------- Utile ----------
+  function randInt(lo, hi){ return Math.floor(Math.random()*(hi-lo+1))+lo; }
+  function choice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function shuffle(arr){
+    for(var i=arr.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=arr[i]; arr[i]=arr[j]; arr[j]=t; }
+    return arr;
+  }
+
+  var CONFETTI_COLORS = ['#ff5ea8','#8b5cf6','#38bdf8','#34d399','#fbbf24','#fb923c','#f472b6'];
+  var PRAISE = ['Bravo, Rebe! 🎉','Super! Ai reușit! ⭐','Extraordinar! 🌟','Felicitări! 👏','Ești o campioană! 💖','Corect! Ce deșteaptă ești! 😊','Perfect! 🌈'];
+  var ENCOURAGE = ['Hopa! Mai încearcă o dată. 💪','Aproape! Apasă „Indiciu" dacă vrei ajutor. 🤔','Nu-i nimic, poți reuși! 🌈','Mai încearcă, sunt sigură că poți! ✨'];
+  var NAMES = [['Paula','Daria'],['Ana','Maria'],['Sofia','Ilinca'],['Carla','Ema']];
+
+  function speak(text){
+    speech.textContent = text;
+    speech.style.animation = 'none';
+    void speech.offsetWidth;
+    speech.style.animation = 'pop .3s ease';
+  }
+
+  // ---------- Sunet (Web Audio) ----------
+  var audioCtx = null;
+  function ensureAudio(){
+    if(muted) return;
+    if(!audioCtx){
+      try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ audioCtx = null; }
+    }
+    if(audioCtx && audioCtx.state === 'suspended'){ audioCtx.resume(); }
+  }
+  function tone(freq, start, dur, type){
+    if(!audioCtx || muted) return;
+    var o = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    o.connect(g); g.connect(audioCtx.destination);
+    var t0 = audioCtx.currentTime + start;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.25, t0+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    o.start(t0); o.stop(t0+dur+0.02);
+  }
+  function goodSound(){ ensureAudio(); tone(523,0,0.16,'triangle'); tone(659,0.12,0.16,'triangle'); tone(784,0.24,0.28,'triangle'); }
+  function badSound(){ ensureAudio(); tone(300,0,0.18,'sine'); tone(220,0.14,0.22,'sine'); }
+
+  // ---------- Confetti ----------
+  function confetti(){
+    for(var i=0;i<22;i++){
+      var p = document.createElement('div');
+      p.className = 'confetti-piece';
+      p.style.left = Math.random()*100 + 'vw';
+      p.style.background = choice(CONFETTI_COLORS);
+      var dur = 1.1 + Math.random()*0.9;
+      p.style.animationDuration = dur + 's';
+      p.style.animationDelay = (Math.random()*0.25) + 's';
+      confettiLayer.appendChild(p);
+      (function(el, ms){ setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, ms); })(p, (dur+0.3)*1000);
+    }
+  }
+
+  // ---------- Reactii Rebe ----------
+  function rebeState(cls, ms){
+    rebe.classList.remove('happy','oops');
+    void rebe.offsetWidth;
+    rebe.classList.add(cls);
+    setTimeout(function(){ rebe.classList.remove(cls); }, ms);
+  }
+
+  // ---------- Miscarea lui Rebe ----------
+  function moveRebeTo(btn, animate){
+    if(!btn) return;
+    var sRect = stations.getBoundingClientRect();
+    var bRect = btn.getBoundingClientRect();
+    var left = bRect.left - sRect.left + bRect.width/2 - rebe.offsetWidth/2;
+    if(animate){
+      rebe.classList.add('walking');
+      rebe.style.left = left + 'px';
+      setTimeout(function(){ rebe.classList.remove('walking'); }, 1000);
+    } else {
+      rebe.classList.add('no-anim');
+      rebe.style.left = left + 'px';
+      void rebe.offsetWidth;
+      rebe.classList.remove('no-anim');
+    }
+  }
+  function activeBtn(){ return btnRow.querySelector('.game-btn[data-game="'+current+'"]'); }
+  function repositionRebe(){ moveRebeTo(activeBtn(), false); }
+
+  // ---------- Stele ----------
+  function addStar(){
+    stars++;
+    localStorage.setItem('rebe_stars', String(stars));
+    starCountEl.textContent = stars;
+    starCountEl.classList.add('pop');
+    setTimeout(function(){ starCountEl.classList.remove('pop'); }, 220);
+  }
+
+  // ---------- Raspunsuri ----------
+  function renderAnswers(options){
+    hintBox.hidden = true;               // ascunde indiciul la fiecare intrebare noua
+    answersEl.innerHTML = '';
+    options.forEach(function(opt){
+      var b = document.createElement('button');
+      b.className = 'ans';
+      var big = document.createElement('span');
+      big.textContent = opt.label;
+      b.appendChild(big);
+      b.addEventListener('click', function(){ handleAnswer(b, opt.correct); });
+      answersEl.appendChild(b);
+    });
+  }
+
+  function handleAnswer(btn, correct){
+    if(locked || btn.disabled) return;
+    if(correct){
+      locked = true;
+      btn.classList.add('correct');
+      var all = answersEl.querySelectorAll('.ans');
+      for(var i=0;i<all.length;i++){ all[i].disabled = true; }
+      addStar();
+      goodSound();
+      confetti();
+      rebeState('happy', 700);
+      speak(choice(PRAISE));
+      setTimeout(function(){ locked = false; games[current].newRound(); }, 1600);
+    } else {
+      btn.classList.add('wrong');
+      btn.disabled = true;
+      badSound();
+      rebeState('oops', 500);
+      speak(choice(ENCOURAGE));
+    }
+  }
+
+  // optiuni numerice apropiate de raspunsul corect (0..200)
+  function numberOptions(correct, count){
+    var set = {}; set[correct] = true;
+    var vals = [correct];
+    var deltas = [1,-1,2,-2,10,-10,3,-3,11,-11,9,-9,20,-20];
+    shuffle(deltas);
+    for(var i=0;i<deltas.length && vals.length<count;i++){
+      var v = correct + deltas[i];
+      if(v>=0 && v<=200 && !set[v]){ set[v]=true; vals.push(v); }
+    }
+    var extra = Math.max(0, correct-5);
+    while(vals.length<count && extra<=200){ if(!set[extra]){ set[extra]=true; vals.push(extra); } extra++; }
+    shuffle(vals);
+    return vals.map(function(v){ return { label:String(v), correct: v === correct }; });
+  }
+
+  function makeHint(title, steps){
+    var h = '<div class="hint-title">💡 '+title+'</div><ol class="steps">';
+    steps.forEach(function(s){ h += '<li>'+s+'</li>'; });
+    return h + '</ol>';
+  }
+
+  // ---------- Generatoare de exercitii ----------
+  // Adunare cu/fara trecere peste ordin, dupa nivel
+  function makeAdd(level){
+    for(var t=0;t<400;t++){
+      var a,b;
+      if(level===1){ a=randInt(1,8)*10; b=randInt(1,8)*10; }          // zeci + zeci
+      else if(level===2){ a=randInt(11,88); b=randInt(1,8); }         // 2 cifre + 1 cifra
+      else if(level===3){ a=randInt(11,80); b=randInt(11,80); }       // 2 cifre + 2 cifre
+      else if(level===4){ a=randInt(12,89); b=randInt(2,9); }         // cu trecere, + 1 cifra
+      else { a=randInt(13,88); b=randInt(13,88); }                    // cu trecere, 2 cifre
+      if(a+b>99) continue;
+      var carry = (a%10 + b%10) >= 10;
+      if(level<=3 && carry) continue;
+      if(level>=4 && !carry) continue;
+      return {a:a,b:b};
+    }
+    return {a:23,b:45};
+  }
+
+  function makeSub(level){
+    for(var t=0;t<400;t++){
+      var a,b;
+      if(level===1){ a=randInt(3,9)*10; b=randInt(1,8)*10; }          // zeci - zeci
+      else if(level===2){ a=randInt(11,99); b=randInt(1,8); }         // 2 cifre - 1 cifra
+      else if(level===3){ a=randInt(30,99); b=randInt(11,80); }       // 2 cifre - 2 cifre
+      else if(level===4){ a=randInt(11,99); b=randInt(2,9); }         // cu imprumut, - 1 cifra
+      else { a=randInt(30,99); b=randInt(11,80); }                    // cu imprumut, 2 cifre
+      if(a-b<0) continue;
+      var borrow = (a%10) < (b%10);
+      if(level<=3 && borrow) continue;
+      if(level>=4 && !borrow) continue;
+      return {a:a,b:b};
+    }
+    return {a:57,b:23};
+  }
+
+  // pas cu pas pentru adunare
+  function addHint(a,b){
+    var ua=a%10, ub=b%10, ta=(a-ua)/10, tb=(b-ub)/10, us=ua+ub, steps=[];
+    if(us<10){
+      steps.push('Adună <b>unitățile</b>: '+ua+' + '+ub+' = '+us+'.');
+      steps.push('Adună <b>zecile</b>: '+ta+' + '+tb+' = '+(ta+tb)+' (adică '+((ta+tb)*10)+').');
+      steps.push('Pune-le împreună: '+((ta+tb)*10)+' + '+us+' = <b>'+(a+b)+'</b>.');
+    } else {
+      steps.push('Adună <b>unitățile</b>: '+ua+' + '+ub+' = '+us+'. Asta e o zece și '+(us-10)+' unități.');
+      steps.push('Scrie '+(us-10)+' la unități și <b>ține minte 1 zece</b>.');
+      steps.push('Adună <b>zecile</b>: '+ta+' + '+tb+' = '+(ta+tb)+', plus 1 reținut = '+(ta+tb+1)+' (adică '+((ta+tb+1)*10)+').');
+      steps.push('Pune-le împreună: '+((ta+tb+1)*10)+' + '+(us-10)+' = <b>'+(a+b)+'</b>.');
+    }
+    return steps;
+  }
+
+  // pas cu pas pentru scadere
+  function subHint(a,b){
+    var ua=a%10, ub=b%10, ta=(a-ua)/10, tb=(b-ub)/10, steps=[];
+    if(ua>=ub){
+      steps.push('Scade <b>unitățile</b>: '+ua+' − '+ub+' = '+(ua-ub)+'.');
+      steps.push('Scade <b>zecile</b>: '+ta+' − '+tb+' = '+(ta-tb)+' (adică '+((ta-tb)*10)+').');
+      steps.push('Pune-le împreună: <b>'+(a-b)+'</b>.');
+    } else {
+      steps.push('La unități, '+ua+' este mai mic decât '+ub+'. <b>Împrumuți o zece</b>: '+ua+' + 10 = '+(ua+10)+'.');
+      steps.push('Scade unitățile: '+(ua+10)+' − '+ub+' = '+(ua+10-ub)+'.');
+      steps.push('Fiindcă ai împrumutat o zece, la zeci rămâne '+ta+' − 1 = '+(ta-1)+'.');
+      steps.push('Scade zecile: '+(ta-1)+' − '+tb+' = '+(ta-1-tb)+' (adică '+((ta-1-tb)*10)+').');
+      steps.push('Pune-le împreună: <b>'+(a-b)+'</b>.');
+    }
+    return steps;
+  }
+
+  // termen necunoscut
+  function makeMissing(level){
+    var a,b,c;
+    if(Math.random()<0.5){
+      var p=makeAdd(level); a=p.a; b=p.b; c=a+b;
+      if(Math.random()<0.5){
+        return { display:'<span class="blank">?</span> + '+b+' = '+c, answer:a, hintTitle:'Aflăm primul termen',
+          steps:['La adunare, termenul care lipsește se află <b>scăzând</b> din rezultat termenul cunoscut.',
+                 'Scazi: '+c+' − '+b+' = <b>'+a+'</b>.'] };
+      }
+      return { display:a+' + <span class="blank">?</span> = '+c, answer:b, hintTitle:'Aflăm al doilea termen',
+        steps:['La adunare, termenul care lipsește se află <b>scăzând</b> din rezultat termenul cunoscut.',
+               'Scazi: '+c+' − '+a+' = <b>'+b+'</b>.'] };
+    } else {
+      var q=makeSub(level); a=q.a; b=q.b; c=a-b; // a - b = c
+      if(Math.random()<0.5){
+        return { display:'<span class="blank">?</span> − '+b+' = '+c, answer:a, hintTitle:'Aflăm descăzutul (primul număr)',
+          steps:['Numărul din care se scade lipsește. Îl afli <b>adunând</b> rezultatul cu numărul scăzut.',
+                 'Aduni: '+c+' + '+b+' = <b>'+a+'</b>.'] };
+      }
+      return { display:a+' − <span class="blank">?</span> = '+c, answer:b, hintTitle:'Aflăm scăzătorul',
+        steps:['Numărul care se scade lipsește. Îl afli <b>scăzând</b> rezultatul din primul număr.',
+               'Scazi: '+a+' − '+c+' = <b>'+b+'</b>.'] };
+    }
+  }
+
+  // pereche a carei unitati fac 10 (12 si 8, 33 si 17, ...)
+  function makePair(maxTens){
+    var u = randInt(1,9);
+    var t1 = randInt(1,maxTens), t2 = randInt(1,maxTens);
+    return [t1*10+u, t2*10+(10-u)];
+  }
+
+  function makeGroup(level){
+    for(var t=0;t<500;t++){
+      var pairs=[], single=null;
+      if(level===1){ pairs=[makePair(2)]; single=randInt(1,3)*10; }
+      else if(level===2){ pairs=[makePair(2),makePair(2)]; }
+      else if(level===3){ pairs=[makePair(3),makePair(2)]; }
+      else if(level===4){ pairs=[makePair(2),makePair(2)]; single=randInt(1,2)*10; }
+      else { pairs=[makePair(2),makePair(2),makePair(1)]; }
+      var nums=[]; pairs.forEach(function(p){ nums.push(p[0],p[1]); }); if(single!=null) nums.push(single);
+      var total=nums.reduce(function(s,x){ return s+x; },0);
+      if(total>100) continue;
+      var disp=nums.slice(); shuffle(disp);
+      return { nums:disp, pairs:pairs, single:single, total:total };
+    }
+    return { nums:[12,8,30], pairs:[[12,8]], single:30, total:50 };
+  }
+
+  function groupHint(pairs, single, total){
+    var steps=[], partials=[];
+    steps.push('Caută numerele ale căror <b>unități fac 10</b> împreună și adună-le întâi.');
+    pairs.forEach(function(pr){
+      var s = pr[0]+pr[1]; partials.push(s);
+      steps.push('Grupează '+pr[0]+' + '+pr[1]+' = '+s+' ('+(pr[0]%10)+' + '+(pr[1]%10)+' = 10).');
+    });
+    if(single!=null){ partials.push(single); steps.push('Îl păstrezi și pe '+single+'.'); }
+    steps.push('Acum aduni zecile rotunde: '+partials.join(' + ')+' = <b>'+total+'</b>.');
+    return steps;
+  }
+
+  // ---------- Probleme (dupa modelul din caiet) ----------
+  function wpRemaining(big){
+    var nm = choice(['Radu','Ana','Mihai','Sofia']);
+    var D = big ? randInt(52,98) : randInt(20,45);
+    var Tr = randInt(5, D-5);
+    return { text:nm+' are de parcurs cu bicicleta '+D+' km. A parcurs deja '+Tr+' km. Ce distanță mai are de parcurs?',
+      answer:D-Tr, hintTitle:'Cât a mai rămas de parcurs?',
+      steps:['„Mai are de parcurs" înseamnă cât lipsește până la total.',
+             'Scazi din total cât a făcut deja: '+D+' − '+Tr+' = <b>'+(D-Tr)+'</b> km.'] };
+  }
+  function wpMissingPart(big){
+    var nm = choice(NAMES);
+    var T = big ? randInt(55,95) : randInt(25,48);
+    var A = randInt(10, T-8);
+    return { text:nm[0]+' a cules '+A+' de alune, iar împreună cu '+nm[1]+' au cules '+T+' de alune. Câte alune a cules '+nm[1]+'?',
+      answer:T-A, hintTitle:'Câte a cules cealaltă fetiță?',
+      steps:['„Împreună" înseamnă alunele amândurora la un loc: '+A+' + (alunele lui '+nm[1]+') = '+T+'.',
+             'Ca să afli partea care lipsește, scazi: '+T+' − '+A+' = <b>'+(T-A)+'</b> alune.'] };
+  }
+  function wpMore(big){
+    var A = big ? randInt(20,55) : randInt(6,18);
+    var B = big ? randInt(6,20) : randInt(2,8);
+    return { text:'În clasă sunt '+A+' fete, iar băieți sunt cu '+B+' mai mulți. Câți băieți sunt în clasă?',
+      answer:A+B, hintTitle:'„Cu mai mulți" înseamnă adunare',
+      steps:['„Cu '+B+' mai mulți" înseamnă că iei numărul de fete și mai adaugi '+B+'.',
+             'Aduni: '+A+' + '+B+' = <b>'+(A+B)+'</b> băieți.'] };
+  }
+  function wpTotalTwo(big){
+    var A = big ? randInt(21,55) : randInt(10,25);
+    var B = big ? randInt(21,44) : randInt(10,25);
+    return { text:'În parcare sunt '+A+' mașini roșii și '+B+' mașini albastre. Câte mașini sunt în total?',
+      answer:A+B, hintTitle:'Câte sunt în total?',
+      steps:['„În total" înseamnă că le pui pe toate la un loc — aduni.',
+             'Aduni: '+A+' + '+B+' = <b>'+(A+B)+'</b> mașini.'] };
+  }
+  function wpThink(){
+    var add = randInt(15,40), ans = randInt(6,40), target = add+ans;
+    return { text:'Mă gândesc la un număr. Dacă îl adun cu '+add+', obțin '+target+'. La ce număr m-am gândit?',
+      answer:ans, hintTitle:'Fă operația invers',
+      steps:['Dacă la adunare rezultatul este '+target+', numărul necunoscut se află <b>scăzând</b>.',
+             'Scazi: '+target+' − '+add+' = <b>'+ans+'</b>.'] };
+  }
+  function wpEnrolled(){
+    var I = randInt(60,90), L = randInt(8,20), stayed = I-L;
+    var joined = randInt(5, 99-stayed), N = stayed+joined;
+    return { text:'În excursie s-au înscris la început '+I+' de copii. '+L+' au renunțat, dar s-au înscris alți copii până la un total de '+N+' copii. Câți copii s-au mai înscris?',
+      answer:joined, hintTitle:'Problemă în doi pași',
+      steps:['Pasul 1 — câți au rămas după ce '+L+' au renunțat: '+I+' − '+L+' = '+stayed+' copii.',
+             'Pasul 2 — de la '+stayed+' până la '+N+', câți s-au adăugat: '+N+' − '+stayed+' = <b>'+joined+'</b> copii.'] };
+  }
+  function wpSeats(){
+    var B = randInt(12,25), M = randInt(3,8), girls = B+M, P = randInt(2,6);
+    var total = B+girls+1+P;
+    return { text:'Într-o excursie merg '+B+' băieți, fete cu '+M+' mai multe, doamna învățătoare și '+P+' părinți. Câte locuri trebuie să aibă autocarul?',
+      answer:total, hintTitle:'Aduni toate persoanele',
+      steps:['Întâi fetele: '+B+' + '+M+' = '+girls+' fete.',
+             'Apoi aduni tot: băieți + fete + 1 învățătoare + părinți: '+B+' + '+girls+' + 1 + '+P+' = <b>'+total+'</b> locuri.'] };
+  }
+  function wpAnimals(){
+    var deer = randInt(18,30), db = randInt(3,8), bears = deer-db, dw = randInt(6,14), wolves = deer+dw;
+    var total = deer+bears+wolves;
+    return { text:'Într-o rezervație erau '+deer+' cerbi, cu '+db+' mai mulți decât urși și cu '+dw+' mai puțini decât lupi. Câte animale erau în total?',
+      answer:total, hintTitle:'Află pe rând fiecare animal',
+      steps:['Urșii: cerbii sunt cu '+db+' mai mulți, deci urși sunt '+deer+' − '+db+' = '+bears+'.',
+             'Lupii: cerbii sunt cu '+dw+' mai puțini, deci lupi sunt '+deer+' + '+dw+' = '+wolves+'.',
+             'Aduni toate animalele: '+deer+' + '+bears+' + '+wolves+' = <b>'+total+'</b>.'] };
+  }
+
+  function makeWord(level){
+    var pool;
+    if(level===1)      pool=[function(){return wpRemaining(false);}, function(){return wpMissingPart(false);}, function(){return wpMore(false);}];
+    else if(level===2) pool=[function(){return wpRemaining(false);}, function(){return wpMissingPart(false);}, function(){return wpMore(false);}, function(){return wpTotalTwo(false);}];
+    else if(level===3) pool=[function(){return wpMissingPart(true);}, function(){return wpTotalTwo(true);}, function(){return wpRemaining(true);}, function(){return wpThink();}];
+    else if(level===4) pool=[wpSeats, wpEnrolled, wpAnimals];
+    else               pool=[wpEnrolled, wpAnimals, wpSeats, wpThink];
+    return choice(pool)();
+  }
+
+  // ---------- Jocurile ----------
+  var games = {
+    add: {
+      title: '➕ Adunăm până la 100',
+      intro: 'Adună numerele. Apasă „Indiciu" ca să vezi rezolvarea pas cu pas!',
+      newRound: function(){
+        var p = makeAdd(level), s = p.a+p.b;
+        questionEl.innerHTML = '<div class="mixed-eq">'+p.a+' + '+p.b+' = <span class="qmark">?</span></div>';
+        curHint = makeHint('Cum adunăm '+p.a+' + '+p.b, addHint(p.a,p.b));
+        renderAnswers(numberOptions(s, 4));
+      }
+    },
+    sub: {
+      title: '➖ Scădem până la 100',
+      intro: 'Scade numerele. Dacă e greu, apasă „Indiciu"!',
+      newRound: function(){
+        var p = makeSub(level), d = p.a-p.b;
+        questionEl.innerHTML = '<div class="mixed-eq">'+p.a+' − '+p.b+' = <span class="qmark">?</span></div>';
+        curHint = makeHint('Cum scădem '+p.a+' − '+p.b, subHint(p.a,p.b));
+        renderAnswers(numberOptions(d, 4));
+      }
+    },
+    missing: {
+      title: '❓ Numărul care lipsește',
+      intro: 'Ce număr trebuie pus în locul liniuței? Gândește-te la operația inversă!',
+      newRound: function(){
+        var m = makeMissing(level);
+        questionEl.innerHTML = '<div class="mixed-eq">'+m.display+'</div><div style="font-size:.6em;font-weight:600">Ce număr lipsește?</div>';
+        curHint = makeHint(m.hintTitle, m.steps);
+        renderAnswers(numberOptions(m.answer, 4));
+      }
+    },
+    group: {
+      title: '🧩 Grupăm și adunăm',
+      intro: 'Adună mai multe numere. Grupează-le isteț ca să faci zeci rotunde!',
+      newRound: function(){
+        var g = makeGroup(level);
+        questionEl.innerHTML = '<div class="mixed-eq">'+g.nums.join(' + ')+' = <span class="qmark">?</span></div>';
+        curHint = makeHint('Grupăm ca să adunăm ușor', groupHint(g.pairs, g.single, g.total));
+        renderAnswers(numberOptions(g.total, 4));
+      }
+    },
+    word: {
+      title: '📖 Probleme',
+      intro: 'Citește cu atenție problema. Apasă „Indiciu" pentru rezolvare pas cu pas!',
+      newRound: function(){
+        var p = makeWord(level);
+        questionEl.innerHTML = '<div class="word-problem">'+p.text+'</div>';
+        curHint = makeHint(p.hintTitle, p.steps);
+        renderAnswers(numberOptions(p.answer, 4));
+      }
+    }
+  };
+
+  // ---------- Schimbarea jocului ----------
+  function selectGame(name, animateWalk){
+    current = name;
+    locked = false;
+    gameBtns.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-game') === name); });
+    var g = games[name];
+    panelTitle.textContent = g.title;
+    speak(g.intro);
+    g.newRound();
+    moveRebeTo(activeBtn(), animateWalk);
+  }
+
+  function levelWord(l){
+    return ['','Foarte ușor 😀','Ușor 🙂','Mediu 😊','Greu 😎','Provocare! 🤓'][l];
+  }
+  function markLevel(){
+    lvlBtns.forEach(function(b){ b.classList.toggle('active', parseInt(b.getAttribute('data-lvl'),10) === level); });
+  }
+
+  // ---------- Evenimente ----------
+  gameBtns.forEach(function(b){
+    b.addEventListener('click', function(){
+      ensureAudio();
+      var name = b.getAttribute('data-game');
+      if(name === current){ locked=false; games[current].newRound(); speak(games[current].intro); return; }
+      selectGame(name, true);
+    });
+  });
+
+  lvlBtns.forEach(function(b){
+    b.addEventListener('click', function(){
+      ensureAudio();
+      level = parseInt(b.getAttribute('data-lvl'),10);
+      localStorage.setItem('rebe2_level', String(level));
+      markLevel();
+      locked = false;
+      games[current].newRound();
+      speak('Nivelul '+level+' — '+levelWord(level));
+      tone(560+level*40,0,0.12,'triangle');
+    });
+  });
+
+  hintBtn.addEventListener('click', function(){
+    ensureAudio();
+    if(hintBox.hidden){
+      hintBox.innerHTML = curHint;
+      hintBox.hidden = false;
+      speak('Hai să rezolvăm împreună, pas cu pas! 🐾');
+      tone(700,0,0.12,'triangle');
+    } else {
+      hintBox.hidden = true;
+    }
+  });
+
+  document.getElementById('againBtn').addEventListener('click', function(){
+    ensureAudio();
+    locked = false;
+    games[current].newRound();
+    rebeState('happy', 500);
+  });
+
+  muteBtn.addEventListener('click', function(){
+    muted = !muted;
+    localStorage.setItem('rebe_muted', muted ? '1' : '0');
+    muteBtn.textContent = muted ? '🔇' : '🔊';
+    if(!muted){ ensureAudio(); tone(660,0,0.15,'triangle'); }
+  });
+
+  document.addEventListener('pointerdown', ensureAudio, { once:true });
+  window.addEventListener('resize', repositionRebe);
+
+  // ---------- Start ----------
+  function start(){
+    markLevel();
+    selectGame('add', false);
+    setTimeout(repositionRebe, 60);
+    setTimeout(repositionRebe, 400);
+  }
+  if(document.readyState === 'complete'){ start(); }
+  else { window.addEventListener('load', start); }
+  repositionRebe();
+})();
+</script>
+</body>
+</html>
