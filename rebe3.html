@@ -194,7 +194,7 @@
   .confetti-piece{position:absolute;top:-24px;width:11px;height:15px;border-radius:2px;animation:fall linear forwards;}
   @keyframes fall{0%{transform:translateY(-24px) rotate(0);opacity:1}100%{transform:translateY(105vh) rotate(720deg);opacity:.9}}
 
-  /* Rebe înoată — recompensă la fiecare 10 răspunsuri corecte */
+  /* Rebe înoată — recompensă la fiecare 7 răspunsuri corecte */
   .swim-layer{position:fixed;inset:0;z-index:48;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .5s;}
   .swim-layer.on{opacity:1;}
   .swim-water{position:absolute;inset:0;background:linear-gradient(180deg,rgba(56,189,248,0) 34%,rgba(56,189,248,.14) 60%,rgba(14,165,233,.22) 100%);}
@@ -445,7 +445,7 @@
     }
   }
 
-  // ---------- Rebe înoată (recompensă la fiecare 10 corecte) ----------
+  // ---------- Rebe înoată (recompensă la fiecare 7 corecte) ----------
   function swim(){
     if(!swimLayer) return;
     var s = swimLayer.querySelector('.swimmer');
@@ -520,7 +520,7 @@
       for(var i=0;i<all.length;i++){ all[i].disabled = true; }
       addStar(); goodSound(); confetti();
       rebeState('happy', 700);
-      if(stars % 10 === 0){ swim(); } else { speak(choice(PRAISE)); }
+      if(stars % 7 === 0){ swim(); } else { speak(choice(PRAISE)); }
       setTimeout(function(){ locked = false; games[current].newRound(); }, 1600);
     } else {
       btn.classList.add('wrong');
