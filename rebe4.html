@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rebe - Axa, ordonarea și rotunjirea</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--pink:#ff5ea8;--purple:#8b5cf6;--green:#34d399;--ink:#3b2b57;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;min-height:100vh;padding:12px;
+    font-family:'Fredoka','Comic Sans MS','Chalkboard SE',system-ui,sans-serif;
+    color:var(--ink);background:linear-gradient(180deg,#a9e0fb,#c9edff 42%,#eaf8ff);
+  }
+  button{font-family:inherit;cursor:pointer;color:inherit;}
+  .wrap{max-width:920px;margin:auto;}
+  header,.panel,.levelbar,.speech,.game-btn{background:#fff;border:3px solid #fff;box-shadow:0 8px 22px rgba(139,92,246,.15);}
+  header{display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:22px;padding:10px 16px;}
+  header h1{margin:0;font-size:clamp(18px,4.5vw,28px);color:#8545cf;}
+  header a{color:var(--purple);font-weight:700;text-decoration:none;white-space:nowrap;}
+  header a:hover{text-decoration:underline;}
+  .stars{white-space:nowrap;background:#fff7d6;border:2px solid #ffd766;border-radius:999px;padding:6px 10px;font-weight:700;}
+  .top-actions{display:flex;align-items:center;gap:7px;}
+  .mute-btn{border:0;background:#f1ecff;border-radius:50%;width:44px;height:44px;font-size:22px;}
+  .intro{display:flex;align-items:center;justify-content:center;gap:14px;margin:14px auto;max-width:650px;}
+  .intro img{width:70px;filter:drop-shadow(0 3px 5px #9d8aaa);animation:bob 2.6s ease-in-out infinite;}
+  .speech{border-color:var(--purple);border-radius:18px;padding:12px 16px;font-size:clamp(15px,3.5vw,19px);font-weight:500;}
+  @keyframes bob{50%{transform:translateY(-7px)}}
+  .games{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;}
+  .game-btn{border-radius:18px;padding:10px 4px;font-size:clamp(12px,2.8vw,16px);font-weight:700;min-height:76px;}
+  .game-btn .icon{display:block;font-size:clamp(22px,6vw,32px);margin-bottom:2px;}
+  .game-btn.active{border-color:var(--pink);background:#fff0f7;box-shadow:0 8px 20px rgba(255,94,168,.3);}
+  .levelbar{border-radius:18px;margin-top:14px;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;}
+  .levelbar strong{margin-right:3px;}
+  .lvl{border:3px solid #e6e0ff;border-radius:12px;background:#fff;min-width:42px;height:42px;font-weight:700;font-size:18px;}
+  .lvl.active{border-color:var(--green);background:#eafaf0;}
+  .level-note{flex-basis:100%;text-align:center;color:#665887;margin:0;font-size:14px;}
+  .panel{border-radius:26px;margin-top:16px;padding:18px 12px 24px;text-align:center;min-height:340px;}
+  .panel h2{font-size:clamp(20px,4.5vw,26px);margin:0 0 12px;}
+  .question{font-size:clamp(18px,4.2vw,24px);font-weight:700;margin:8px 0 12px;}
+  .detail{font-size:clamp(15px,3.4vw,18px);color:#6b5b92;margin:8px 0;}
+  .line-track{position:relative;width:86%;height:54px;margin:50px auto 22px;}
+  .line-track::before{content:"";position:absolute;left:0;right:0;top:12px;border-top:4px solid var(--purple);}
+  .tick{position:absolute;top:4px;transform:translateX(-50%);min-width:28px;text-align:center;font-size:clamp(12px,3vw,17px);font-weight:700;}
+  .tick::before{content:"";display:block;height:18px;width:3px;margin:auto;background:var(--purple);}
+  .tick.missing{color:#de3785;font-size:22px;}
+  .tick.missing::before{background:#de3785;width:5px;}
+  .line-track.sparse .tick:nth-child(even):not(.missing){font-size:0;}
+  .pin{position:absolute;top:-34px;transform:translateX(-50%);font-weight:700;color:#b51e6c;background:#ffe1f0;border-radius:10px;padding:2px 5px;}
+  .pin::after{content:"▼";position:absolute;left:50%;top:22px;transform:translateX(-50%);font-size:12px;}
+  .answers,.tiles,.slots{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:14px auto;}
+  .ans,.tile{border:3px solid #e6e0ff;border-radius:18px;background:#fff;min-width:70px;min-height:60px;padding:9px 14px;
+    font-size:clamp(22px,5vw,28px);font-weight:700;box-shadow:0 5px 0 #ded6ff;}
+  .ans:hover:not(:disabled),.tile:hover:not(:disabled),.lvl:hover,.game-btn:hover{border-color:var(--pink);}
+  .ans:disabled,.tile:disabled{cursor:default;}
+  .ans.correct,.tile.correct{background:#d7fbe8;border-color:var(--green);box-shadow:0 5px 0 #79e0b3;}
+  .ans.wrong,.tile.wrong{background:#ffe0e6;border-color:#e23e8c;}
+  .slot{min-width:52px;min-height:51px;padding:6px;border:3px dashed #c8b5f8;border-radius:13px;font-size:23px;font-weight:700;}
+  .slot.filled{border-style:solid;border-color:var(--green);background:#eafaf0;}
+  .controls{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:20px;}
+  .controls button{border:0;border-radius:16px;padding:10px 18px;font-size:16px;font-weight:700;box-shadow:0 5px 0 rgba(0,0,0,.14);}
+  .hint-btn{background:linear-gradient(90deg,#fbbf24,#fb923c);}
+  .again{background:linear-gradient(90deg,#38bdf8,#8b5cf6);color:#fff;}
+  .hint-box{margin:16px auto 0;max-width:580px;text-align:left;background:#fffbe9;border:3px solid #fbbf24;border-radius:18px;padding:14px 16px;font-size:17px;line-height:1.5;}
+  [hidden]{display:none!important;}
+  footer{text-align:center;margin:18px 0;color:#8175a7;font-size:14px;}
+  @media(max-width:520px){
+    .games{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .game-btn:first-child{grid-column:span 2;}
+  }
+  @media(max-width:400px){
+    header{flex-wrap:wrap;}
+    .top-actions{margin-left:auto;}
+    .game-btn{min-height:70px;}
+    .ans,.tile{min-width:60px;padding:8px 10px;}
+    .slot{min-width:43px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a href="rebe.html">← Jocurile lui Rebe</a>
+    <h1>🌸 Numere și rotunjire</h1>
+    <div class="top-actions">
+      <div class="stars" aria-label="Stele câștigate">⭐ <span id="starCount">0</span></div>
+      <button class="mute-btn" id="muteBtn" type="button" aria-label="Oprește sunetul">🔊</button>
+    </div>
+  </header>
+  <div class="intro">
+    <img src="rebe-head.png" alt="Rebe">
+    <div class="speech" id="speech" role="status" aria-live="polite">Bună! Hai să ne jucăm cu numerele și cu rotunjirile! 💖</div>
+  </div>
+  <nav class="games" aria-label="Alege jocul">
+    <button class="game-btn" data-game="axis" type="button"><span class="icon">📏</span>Axa numerelor</button>
+    <button class="game-btn" data-game="tens" type="button"><span class="icon">🎯</span>La zeci</button>
+    <button class="game-btn" data-game="hundreds" type="button"><span class="icon">💯</span>La sute</button>
+    <button class="game-btn" data-game="up" type="button"><span class="icon">📈</span>Crescător</button>
+    <button class="game-btn" data-game="down" type="button"><span class="icon">📉</span>Descrescător</button>
+  </nav>
+  <div class="levelbar" aria-label="Alege nivelul">
+    <strong>Nivel:</strong>
+    <button class="lvl" data-level="1" type="button">1</button>
+    <button class="lvl" data-level="2" type="button">2</button>
+    <button class="lvl" data-level="3" type="button">3</button>
+    <button class="lvl" data-level="4" type="button">4</button>
+    <button class="lvl" data-level="5" type="button">5</button>
+    <p class="level-note" id="levelNote"></p>
+  </div>
+  <main class="panel">
+    <h2 id="panelTitle"></h2>
+    <div class="question" id="question"></div>
+    <div id="visual"></div>
+    <div id="activity"></div>
+    <div class="controls">
+      <button class="hint-btn" id="hintBtn" type="button" aria-expanded="false">💡 Indiciu</button>
+      <button class="again" id="againBtn" type="button">🔄 Altă întrebare</button>
+    </div>
+    <div class="hint-box" id="hintBox" hidden></div>
+  </main>
+  <footer>Făcut cu drag pentru Rebe 💖</footer>
+</div>
+<script>
+(function(){
+  'use strict';
+  var speech = document.getElementById('speech');
+  var title = document.getElementById('panelTitle');
+  var question = document.getElementById('question');
+  var visual = document.getElementById('visual');
+  var activity = document.getElementById('activity');
+  var hintBox = document.getElementById('hintBox');
+  var hintBtn = document.getElementById('hintBtn');
+  var starCount = document.getElementById('starCount');
+  var muteBtn = document.getElementById('muteBtn');
+  var levelNote = document.getElementById('levelNote');
+  var gameButtons = Array.from(document.querySelectorAll('.game-btn'));
+  var levelButtons = Array.from(document.querySelectorAll('.lvl'));
+  var level = Number(localStorage.getItem('rebe4_level')) || 1;
+  if(level < 1 || level > 5 || !Number.isInteger(level)) level = 1;
+  var stars = Number(localStorage.getItem('rebe_stars')) || 0;
+  var muted = localStorage.getItem('rebe_muted') === '1';
+  var game = 'axis';
+  var locked = false;
+  var nextTimer = null;
+  var audio = null;
+  var hints = {
+    axis:'Pe axă, fiecare pas este la fel de mare. Pornește de la un număr scris și numără pașii până la semnul întrebării.',
+    tens:'Caută cele două zeci vecine. Dacă cifra unităților este 0–4, alegi zecea mai mică; dacă este 5–9, alegi zecea mai mare. De exemplu, 995 devine 1000.',
+    hundreds:'Caută cele două sute vecine. Dacă ultimele două cifre sunt sub 50, alegi suta mai mică; de la 50 în sus, alegi suta mai mare. De exemplu, 950 devine 1000.',
+    up:'Crescător înseamnă de la mic la mare. Compară întâi zecile, apoi unitățile.',
+    down:'Descrescător înseamnă de la mare la mic. Compară întâi zecile, apoi unitățile.'
+  };
+  var names = {axis:'Numărul lipsă de pe axă',tens:'Rotunjim la zeci',hundreds:'Rotunjim la sute',up:'Ordonează crescător',down:'Ordonează descrescător'};
+  var notes = {
+    axis:['','Numere până la 20','Numere până la 50','Numere până la 100','Mai multe numere până la 100','Provocare până la 100'],
+    tens:['','La zeci: până la 20','La zeci: până la 99','La zeci: numere de trei cifre','La zeci: numere până la 999','La zeci: 3 cifre, răspuns până la 1000'],
+    hundreds:['','La sute: numere între 100 și 499','La sute: numere până la 999','La sute: aproape de mijloc','La sute: fără marcaj pe axă','La sute: 3 cifre, răspuns până la 1000']
+  };
+  notes.up=notes.axis;
+  notes.down=notes.axis;
+
+  function rand(lo,hi){return lo+Math.floor(Math.random()*(hi-lo+1));}
+  function shuffle(items){
+    for(var i=items.length-1;i>0;i--){var j=rand(0,i);var t=items[i];items[i]=items[j];items[j]=t;}
+    return items;
+  }
+  function say(text){speech.textContent=text;}
+  function beep(correct){
+    if(muted) return;
+    var Audio = window.AudioContext || window.webkitAudioContext;
+    if(!Audio) return;
+    if(!audio) audio = new Audio();
+    if(audio.state === 'suspended') audio.resume();
+    var oscillator = audio.createOscillator();
+    var gain = audio.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.value = correct ? 660 : 280;
+    oscillator.connect(gain);gain.connect(audio.destination);
+    gain.gain.setValueAtTime(0.15,audio.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,audio.currentTime+0.2);
+    oscillator.start();oscillator.stop(audio.currentTime+0.21);
+  }
+  function element(tag,cls,text){
+    var node=document.createElement(tag);
+    node.className=cls;
+    node.textContent=text;
+    return node;
+  }
+  function line(start,step,missing,marker,showMarker){
+    var track=element('div','line-track','');
+    if(game==='axis' && level===5) track.classList.add('sparse');
+    for(var i=0;i<=10;i++){
+      var label=marker !== null && i!==0 && i!==10 ? '' : String(start+i*step);
+      if(i===missing) label='?';
+      var tick=element('div','tick'+(i===missing?' missing':''),label);
+      tick.style.left=(i*10)+'%';
+      track.appendChild(tick);
+    }
+    if(marker !== null && showMarker !== false){
+      var pin=element('div','pin',String(marker));
+      pin.style.left=((marker-start)/step*10)+'%';
+      track.appendChild(pin);
+    }
+    visual.appendChild(track);
+  }
+  function win(){
+    locked=true;
+    stars++;
+    localStorage.setItem('rebe_stars',String(stars));
+    starCount.textContent=stars;
+    say('Bravo! Ai câștigat o stea! ⭐');
+    beep(true);
+    nextTimer=setTimeout(newRound,1500);
+  }
+  function options(values,answer){
+    var row=element('div','answers','');
+    shuffle(values).forEach(function(value){
+      var button=element('button','ans',String(value));
+      button.type='button';
+      button.addEventListener('click',function(){
+        if(locked || button.disabled) return;
+        if(value===answer){
+          button.classList.add('correct');
+          row.querySelectorAll('button').forEach(function(b){b.disabled=true;});
+          win();
+        }else{
+          button.classList.add('wrong');
+          button.disabled=true;
+          say('Mai încearcă! Poți folosi indiciul. 💪');
+          beep(false);
+        }
+      });
+      row.appendChild(button);
+    });
+    activity.appendChild(row);
+  }
+  function axisRound(){
+    var step=[0,1,2,5,10][level] || [1,2,5,10][rand(0,3)];
+    var max=[0,20,50,100,100,100][level];
+    var start=rand(0,Math.floor((max-10*step)/step))*step;
+    var index=rand(1,9);
+    var answer=start+index*step;
+    question.textContent='Ce număr lipsește de pe axă?';
+    var caption=element('p','detail','Fiecare pas înseamnă '+step+(step===1?' unitate.':' unități.'));
+    visual.appendChild(caption);
+    line(start,step,index,null);
+    var values=[answer,answer-step,answer+step,answer+(index<8?2:-2)*step];
+    options(values,answer);
+  }
+  function roundingNumber(){
+    if(game==='tens'){
+      if(level===5) return rand(0,3)===0 ? rand(994,999) : rand(100,999);
+      if(level===4) return rand(1,9)*100+rand(0,9)*10+[4,5,6][rand(0,2)];
+      return rand(level>=3?100:1,[0,19,99,499][level]);
+    }
+    if(level===5) return rand(0,2)===0 ? rand(950,999) : rand(100,999);
+    if(level===3 || level===4) return rand(1,9)*100+[49,50,51][rand(0,2)];
+    return rand(100,level===1?499:999);
+  }
+  function roundRound(){
+    var unit=game==='tens'?10:100;
+    var number=roundingNumber();
+    var lower=Math.floor(number/unit)*unit;
+    var answer=Math.floor((number+unit/2)/unit)*unit;
+    var place=game==='tens'?'zeci':'sute';
+    var showMarker=level<5 && !(game==='hundreds' && level===4);
+    question.textContent='Rotunjește '+number+' la '+place+'. Care este '+(game==='tens'?'zecea':'suta')+' cea mai apropiată?';
+    visual.appendChild(element('p','detail',!showMarker?
+      'Unde s-ar afla '+number+' între '+lower+' și '+(lower+unit)+'?':
+      'Privește locul lui '+number+' între '+lower+' și '+(lower+unit)+'.'));
+    line(lower,unit/10,-1,number,showMarker);
+    options([lower,lower+unit],answer);
+  }
+  function sortRound(){
+    var max=[0,20,50,100,100,100][level];
+    var count=[0,3,4,4,5,6][level];
+    var chosen=new Set();
+    while(chosen.size<count) chosen.add(rand(0,max));
+    var ordered=Array.from(chosen).sort(function(a,b){return game==='up'?a-b:b-a;});
+    question.textContent=game==='up'?'Apasă numerele de la mic la mare.':'Apasă numerele de la mare la mic.';
+    visual.appendChild(element('p','detail','Atinge pe rând numerele pentru a umple căsuțele.'));
+    var slots=element('div','slots','');
+    var tiles=element('div','tiles','');
+    var position=0;
+    ordered.forEach(function(){
+      var slot=element('div','slot','?');
+      slots.appendChild(slot);
+    });
+    shuffle(Array.from(chosen)).forEach(function(value){
+      var button=element('button','tile',String(value));
+      button.type='button';
+      button.addEventListener('click',function(){
+        if(locked || button.disabled) return;
+        if(value!==ordered[position]){
+          button.classList.add('wrong');
+          say('Nu este următorul număr. Compară-le și încearcă din nou! 💪');
+          beep(false);
+          setTimeout(function(){button.classList.remove('wrong');},600);
+          return;
+        }
+        button.classList.add('correct');
+        button.disabled=true;
+        slots.children[position].textContent=String(value);
+        slots.children[position].classList.add('filled');
+        position++;
+        if(position===ordered.length) win();
+        else say('Bine! Alege următorul număr. 😊');
+      });
+      tiles.appendChild(button);
+    });
+    activity.appendChild(slots);
+    activity.appendChild(tiles);
+  }
+  function newRound(){
+    clearTimeout(nextTimer);
+    locked=false;
+    hintBox.hidden=true;
+    hintBtn.setAttribute('aria-expanded','false');
+    visual.replaceChildren();
+    activity.replaceChildren();
+    if(game==='axis') axisRound();
+    else if(game==='tens' || game==='hundreds') roundRound();
+    else sortRound();
+  }
+  function selectGame(name){
+    game=name;
+    title.textContent=names[name];
+    gameButtons.forEach(function(button){
+      var active=button.dataset.game===name;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-current',active?'true':'false');
+    });
+    levelNote.textContent=notes[name][level];
+    say(name==='axis'?'Hai să găsim numărul ascuns pe axă! 📏':
+      name==='tens'?'Găsește zecea cea mai apropiată! 🎯':
+      name==='hundreds'?'Găsește suta cea mai apropiată! 💯':
+      'Hai să așezăm numerele în ordine! 🔢');
+    newRound();
+  }
+  gameButtons.forEach(function(button){
+    button.addEventListener('click',function(){selectGame(button.dataset.game);});
+  });
+  levelButtons.forEach(function(button){
+    button.addEventListener('click',function(){
+      level=Number(button.dataset.level);
+      localStorage.setItem('rebe4_level',String(level));
+      levelButtons.forEach(function(b){b.classList.toggle('active',b===button);});
+      levelNote.textContent=notes[game][level];
+      say('Nivelul '+level+'. '+notes[game][level]+'.');
+      newRound();
+    });
+    button.classList.toggle('active',Number(button.dataset.level)===level);
+  });
+  hintBtn.addEventListener('click',function(){
+    hintBox.hidden=!hintBox.hidden;
+    hintBtn.setAttribute('aria-expanded',String(!hintBox.hidden));
+    if(!hintBox.hidden){
+      hintBox.textContent='💡 '+hints[game];
+      say('Privește indiciul și mai încearcă! 😊');
+    }
+  });
+  document.getElementById('againBtn').addEventListener('click',function(){
+    newRound();
+    say('O nouă întrebare! Hai să încercăm! 🌈');
+  });
+  muteBtn.addEventListener('click',function(){
+    muted=!muted;
+    localStorage.setItem('rebe_muted',muted?'1':'0');
+    muteBtn.textContent=muted?'🔇':'🔊';
+    muteBtn.setAttribute('aria-label',muted?'Pornește sunetul':'Oprește sunetul');
+  });
+  starCount.textContent=stars;
+  levelNote.textContent=notes[game][level];
+  muteBtn.textContent=muted?'🔇':'🔊';
+  muteBtn.setAttribute('aria-label',muted?'Pornește sunetul':'Oprește sunetul');
+  selectGame('axis');
+})();
+</script>
+</body>
+</html>
