@@ -194,7 +194,7 @@
   .confetti-piece{position:absolute;top:-24px;width:11px;height:15px;border-radius:2px;animation:fall linear forwards;}
   @keyframes fall{0%{transform:translateY(-24px) rotate(0);opacity:1}100%{transform:translateY(105vh) rotate(720deg);opacity:.9}}
 
-  /* Rebe înoată — recompensă la fiecare 7 răspunsuri corecte */
+  /* Rebe înoată — recompensă la fiecare 3 răspunsuri corecte, urmată de Level Bonus */
   .swim-layer{position:fixed;inset:0;z-index:48;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .5s;}
   .swim-layer.on{opacity:1;}
   .swim-water{position:absolute;inset:0;background:linear-gradient(180deg,rgba(56,189,248,0) 34%,rgba(56,189,248,.14) 60%,rgba(14,165,233,.22) 100%);}
@@ -319,6 +319,7 @@
 </div>
 <div class="confetti-layer" id="confetti"></div>
 
+<script src="rebe-bonus.js"></script>
 <script>
 (function(){
   "use strict";
@@ -343,6 +344,8 @@
 
   // ---------- Stare ----------
   var stars = parseInt(localStorage.getItem('rebe_stars') || '0', 10) || 0;
+  var SWIM_EVERY = 3; // la câte răspunsuri corecte înoată Rebe
+  var correctCount = 0;
   var muted = localStorage.getItem('rebe_muted') === '1';
   var level = parseInt(localStorage.getItem('rebe3_level') || '1', 10) || 1;
   if(level < 1 || level > 5) level = 1;
@@ -445,7 +448,7 @@
     }
   }
 
-  // ---------- Rebe înoată (recompensă la fiecare 7 corecte) ----------
+  // ---------- Rebe înoată (recompensă la fiecare SWIM_EVERY corecte) + Level Bonus ----------
   function swim(){
     if(!swimLayer) return;
     var s = swimLayer.querySelector('.swimmer');
@@ -456,6 +459,7 @@
     ensureAudio(); startWaves();
     clearTimeout(swim._t);
     swim._t = setTimeout(function(){ swimLayer.classList.remove('on'); stopWaves(); }, 10000);
+    setTimeout(function(){ if(window.RebeBonus) RebeBonus.show(applyBonus); }, 10000);
   }
 
   // ---------- Reactii Rebe ----------
@@ -494,6 +498,14 @@
     starCountEl.classList.add('pop');
     setTimeout(function(){ starCountEl.classList.remove('pop'); }, 220);
   }
+  function applyBonus(delta){
+    stars = Math.max(0, stars + delta);
+    localStorage.setItem('rebe_stars', String(stars));
+    starCountEl.textContent = stars;
+    starCountEl.classList.add('pop');
+    setTimeout(function(){ starCountEl.classList.remove('pop'); }, 220);
+    return stars;
+  }
 
   // ---------- Raspunsuri ----------
   function renderAnswers(options){
@@ -520,7 +532,8 @@
       for(var i=0;i<all.length;i++){ all[i].disabled = true; }
       addStar(); goodSound(); confetti();
       rebeState('happy', 700);
-      if(stars % 7 === 0){ swim(); } else { speak(choice(PRAISE)); }
+      correctCount++;
+      if(correctCount % SWIM_EVERY === 0){ swim(); } else { speak(choice(PRAISE)); }
       setTimeout(function(){ locked = false; games[current].newRound(); }, 1600);
     } else {
       btn.classList.add('wrong');

@@ -25,10 +25,29 @@
   .stars{white-space:nowrap;background:#fff7d6;border:2px solid #ffd766;border-radius:999px;padding:6px 10px;font-weight:700;}
   .top-actions{display:flex;align-items:center;gap:7px;}
   .mute-btn{border:0;background:#f1ecff;border-radius:50%;width:44px;height:44px;font-size:22px;}
-  .intro{display:flex;align-items:center;justify-content:center;gap:14px;margin:14px auto;max-width:650px;}
-  .intro img{width:70px;filter:drop-shadow(0 3px 5px #9d8aaa);animation:bob 2.6s ease-in-out infinite;}
-  .speech{border-color:var(--purple);border-radius:18px;padding:12px 16px;font-size:clamp(15px,3.5vw,19px);font-weight:500;}
-  @keyframes bob{50%{transform:translateY(-7px)}}
+  /* Rebe stă deasupra jocului ales */
+  .stations{position:relative;padding-top:118px;margin-top:16px;}
+  .rebe{position:absolute;top:0;left:0;width:96px;height:118px;
+    transition:left 1s cubic-bezier(.34,1.2,.64,1);z-index:5;pointer-events:none;}
+  .rebe.no-anim{transition:none;}
+  .rebe-inner{position:absolute;inset:0;transform-origin:50% 100%;animation:bob 2.4s ease-in-out infinite;}
+  .rebe.walking .rebe-inner{animation:waddle .34s ease-in-out infinite;}
+  .rebe.happy .rebe-inner{animation:jump .7s ease;}
+  .rebe.oops .rebe-inner{animation:shake .5s ease;}
+  .rebe-head{position:absolute;top:0;left:50%;transform:translateX(-50%);width:58px;height:auto;z-index:2;
+    filter:drop-shadow(0 2px 3px rgba(0,0,0,.2));}
+  .rebe-body{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:58px;height:auto;z-index:1;overflow:visible;}
+  .arm-wave{transform-box:fill-box;transform-origin:0% 100%;animation:wave 1.6s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  @keyframes waddle{0%,100%{transform:translateY(-3px) rotate(-5deg)}50%{transform:translateY(-3px) rotate(5deg)}}
+  @keyframes jump{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-30px) scale(1.06) rotate(-4deg)}55%{transform:translateY(0) scale(1)}70%{transform:translateY(-14px) rotate(3deg)}100%{transform:translateY(0)}}
+  @keyframes shake{0%,100%{transform:rotate(0)}20%{transform:rotate(-9deg)}40%{transform:rotate(9deg)}60%{transform:rotate(-6deg)}80%{transform:rotate(6deg)}}
+  @keyframes wave{0%,100%{transform:rotate(0)}50%{transform:rotate(-22deg)}}
+  .speech{position:relative;margin:6px auto 0;max-width:560px;text-align:center;border-color:var(--purple);border-radius:18px;
+    padding:12px 18px;font-size:clamp(15px,3.4vw,19px);font-weight:500;animation:pop .3s ease;}
+  .speech::after{content:"";position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+    border:8px solid transparent;border-bottom-color:var(--purple);}
+  @keyframes pop{0%{transform:scale(.85);opacity:0}100%{transform:scale(1);opacity:1}}
   .games{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;}
   .game-btn{border-radius:18px;padding:10px 4px;font-size:clamp(12px,2.8vw,16px);font-weight:700;min-height:76px;}
   .game-btn .icon{display:block;font-size:clamp(22px,6vw,32px);margin-bottom:2px;}
@@ -89,9 +108,16 @@
   @keyframes swim-kick{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}
   .swim-bubble{fill:#fff;opacity:.7;animation:swim-bub 1.3s ease-in infinite;}
   @keyframes swim-bub{0%{opacity:.7;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(-34px,-20px) scale(.3)}}
+  /* Confetti */
+  .confetti-layer{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:50;}
+  .confetti-piece{position:absolute;top:-24px;width:11px;height:15px;border-radius:2px;animation:fall linear forwards;}
+  @keyframes fall{
+    0%{transform:translateY(-24px) rotate(0);opacity:1}
+    100%{transform:translateY(105vh) rotate(720deg);opacity:.9}
+  }
   @media(max-width:520px){
-    .games{grid-template-columns:repeat(2,minmax(0,1fr));}
-    .game-btn:first-child{grid-column:span 2;}
+    .games{gap:5px;}
+    .game-btn{padding:8px 2px;font-size:clamp(9px,2.6vw,12px);overflow-wrap:anywhere;}
   }
   @media(max-width:400px){
     header{flex-wrap:wrap;}
@@ -112,17 +138,40 @@
       <button class="mute-btn" id="muteBtn" type="button" aria-label="Oprește sunetul">🔊</button>
     </div>
   </header>
-  <div class="intro">
-    <img src="rebe-head.png" alt="Rebe">
-    <div class="speech" id="speech" role="status" aria-live="polite">Bună! Hai să ne jucăm cu numerele și cu rotunjirile! 💖</div>
-  </div>
+  <div class="stations" id="stations">
+    <div class="rebe" id="rebe" aria-hidden="true">
+      <div class="rebe-inner">
+        <img class="rebe-head" alt="" src="rebe-head.png">
+        <svg class="rebe-body" viewBox="17 44 66 84" xmlns="http://www.w3.org/2000/svg">
+          <rect x="41" y="104" width="7" height="16" rx="3" fill="#ffd9b3"/>
+          <rect x="52" y="104" width="7" height="16" rx="3" fill="#ffd9b3"/>
+          <ellipse cx="44" cy="122" rx="8" ry="5" fill="#e11d6b"/>
+          <ellipse cx="56" cy="122" rx="8" ry="5" fill="#e11d6b"/>
+          <rect x="45" y="49" width="10" height="13" rx="4" fill="#f0b892"/>
+          <polygon points="41,58 59,58 72,108 28,108" fill="#ff5ea8"/>
+          <polygon points="41,58 59,58 62,74 38,74" fill="#ff86c0"/>
+          <circle cx="42" cy="88" r="2.4" fill="#fff"/>
+          <circle cx="55" cy="82" r="2.4" fill="#fff"/>
+          <circle cx="50" cy="98" r="2.4" fill="#fff"/>
+          <circle cx="60" cy="97" r="2.4" fill="#fff"/>
+          <line x1="42" y1="64" x2="27" y2="84" stroke="#ffd9b3" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="26" cy="85" r="4.5" fill="#ffd9b3"/>
+          <g class="arm-wave">
+            <line x1="58" y1="64" x2="76" y2="50" stroke="#ffd9b3" stroke-width="7" stroke-linecap="round"/>
+            <circle cx="77" cy="49" r="4.5" fill="#ffd9b3"/>
+          </g>
+        </svg>
+      </div>
+    </div>
   <nav class="games" aria-label="Alege jocul">
     <button class="game-btn" data-game="axis" type="button"><span class="icon">📏</span>Axa numerelor</button>
     <button class="game-btn" data-game="tens" type="button"><span class="icon">🎯</span>La zeci</button>
     <button class="game-btn" data-game="hundreds" type="button"><span class="icon">💯</span>La sute</button>
     <button class="game-btn" data-game="up" type="button"><span class="icon">📈</span>Crescător</button>
-    <button class="game-btn" data-game="down" type="button"><span class="icon">📉</span>Descrescător</button>
+    <button class="game-btn" data-game="down" type="button"><span class="icon">📉</span>Descres&shy;cător</button>
   </nav>
+  </div>
+  <div class="speech" id="speech" role="status" aria-live="polite">Bună! Hai să ne jucăm cu numerele și cu rotunjirile! 💖</div>
   <div class="levelbar" aria-label="Alege nivelul">
     <strong>Nivel:</strong>
     <button class="lvl" data-level="1" type="button">1</button>
@@ -145,6 +194,7 @@
   </main>
   <footer>Făcut cu drag pentru Rebe 💖</footer>
 </div>
+<div class="confetti-layer" id="confetti" aria-hidden="true"></div>
 <div class="swim-layer" id="swimLayer" aria-hidden="true">
   <div class="swim-water"></div>
   <div class="swim-wave"></div>
@@ -163,6 +213,7 @@
     <img class="swim-head" src="rebe-head.png" alt="">
   </div>
 </div>
+<script src="rebe-bonus.js"></script>
 <script>
 (function(){
   'use strict';
@@ -175,6 +226,10 @@
   var hintBtn = document.getElementById('hintBtn');
   var starCount = document.getElementById('starCount');
   var swimLayer = document.getElementById('swimLayer');
+  var rebe = document.getElementById('rebe');
+  var stations = document.getElementById('stations');
+  var confettiLayer = document.getElementById('confetti');
+  var CONFETTI_COLORS = ['#ff5ea8','#8b5cf6','#38bdf8','#34d399','#fbbf24','#fb923c','#f472b6'];
   var muteBtn = document.getElementById('muteBtn');
   var levelNote = document.getElementById('levelNote');
   var gameButtons = Array.from(document.querySelectorAll('.game-btn'));
@@ -182,6 +237,8 @@
   var level = Number(localStorage.getItem('rebe4_level')) || 1;
   if(level < 1 || level > 5 || !Number.isInteger(level)) level = 1;
   var stars = Number(localStorage.getItem('rebe_stars')) || 0;
+  var SWIM_EVERY = 3; // la câte răspunsuri corecte înoată Rebe
+  var correctCount = 0;
   var muted = localStorage.getItem('rebe_muted') === '1';
   var game = 'axis';
   var locked = false;
@@ -208,7 +265,36 @@
     for(var i=items.length-1;i>0;i--){var j=rand(0,i);var t=items[i];items[i]=items[j];items[j]=t;}
     return items;
   }
-  function say(text){speech.textContent=text;}
+  function say(text){
+    speech.textContent=text;
+    speech.style.animation='none';
+    void speech.offsetWidth;
+    speech.style.animation='';
+  }
+  function rebeState(cls,ms){
+    rebe.classList.remove('happy','oops');
+    void rebe.offsetWidth;
+    rebe.classList.add(cls);
+    setTimeout(function(){rebe.classList.remove(cls);},ms);
+  }
+  function activeButton(){return gameButtons.find(function(b){return b.dataset.game===game;});}
+  function moveRebeTo(button,animate){
+    if(!button) return;
+    var sRect=stations.getBoundingClientRect();
+    var bRect=button.getBoundingClientRect();
+    var left=bRect.left-sRect.left+bRect.width/2-rebe.offsetWidth/2;
+    if(animate){
+      rebe.classList.add('walking');
+      rebe.style.left=left+'px';
+      setTimeout(function(){rebe.classList.remove('walking');},1000);
+    } else {
+      rebe.classList.add('no-anim');
+      rebe.style.left=left+'px';
+      void rebe.offsetWidth;
+      rebe.classList.remove('no-anim');
+    }
+  }
+  function repositionRebe(){moveRebeTo(activeButton(),false);}
   function beep(correct){
     if(muted) return;
     var Audio = window.AudioContext || window.webkitAudioContext;
@@ -247,6 +333,19 @@
     }
     visual.appendChild(track);
   }
+  function confetti(){
+    for(var i=0;i<22;i++){
+      var p=document.createElement('div');
+      p.className='confetti-piece';
+      p.style.left=Math.random()*100+'vw';
+      p.style.background=CONFETTI_COLORS[rand(0,CONFETTI_COLORS.length-1)];
+      var dur=1.1+Math.random()*0.9;
+      p.style.animationDuration=dur+'s';
+      p.style.animationDelay=(Math.random()*0.25)+'s';
+      confettiLayer.appendChild(p);
+      (function(node,ms){setTimeout(function(){if(node.parentNode) node.parentNode.removeChild(node);},ms);})(p,(dur+0.3)*1000);
+    }
+  }
   function swim(){
     var swimmer=swimLayer.querySelector('.swimmer');
     swimmer.style.animation='none';
@@ -256,15 +355,25 @@
     say('Bravo! Rebe înoată puțin! 🏊‍♀️🌊🎉');
     clearTimeout(swim._t);
     swim._t=setTimeout(function(){swimLayer.classList.remove('on');},10000);
+    setTimeout(function(){if(window.RebeBonus) RebeBonus.show(applyBonus);},10000);
+  }
+  function applyBonus(delta){
+    stars=Math.max(0,stars+delta);
+    localStorage.setItem('rebe_stars',String(stars));
+    starCount.textContent=stars;
+    return stars;
   }
   function win(){
     locked=true;
     stars++;
     localStorage.setItem('rebe_stars',String(stars));
     starCount.textContent=stars;
-    if(stars%7===0) swim();
+    correctCount++;
+    if(correctCount%SWIM_EVERY===0) swim();
     else say('Bravo! Ai câștigat o stea! ⭐');
     beep(true);
+    confetti();
+    rebeState('happy',700);
     nextTimer=setTimeout(newRound,1500);
   }
   function options(values,answer){
@@ -283,6 +392,7 @@
           button.disabled=true;
           say('Mai încearcă! Poți folosi indiciul. 💪');
           beep(false);
+          rebeState('oops',500);
         }
       });
       row.appendChild(button);
@@ -350,6 +460,7 @@
           button.classList.add('wrong');
           say('Nu este următorul număr. Compară-le și încearcă din nou! 💪');
           beep(false);
+          rebeState('oops',500);
           setTimeout(function(){button.classList.remove('wrong');},600);
           return;
         }
@@ -377,7 +488,7 @@
     else if(game==='tens' || game==='hundreds') roundRound();
     else sortRound();
   }
-  function selectGame(name){
+  function selectGame(name,animateWalk){
     game=name;
     title.textContent=names[name];
     gameButtons.forEach(function(button){
@@ -391,9 +502,10 @@
       name==='hundreds'?'Găsește suta cea mai apropiată! 💯':
       'Hai să așezăm numerele în ordine! 🔢');
     newRound();
+    moveRebeTo(activeButton(),animateWalk);
   }
   gameButtons.forEach(function(button){
-    button.addEventListener('click',function(){selectGame(button.dataset.game);});
+    button.addEventListener('click',function(){selectGame(button.dataset.game,true);});
   });
   levelButtons.forEach(function(button){
     button.addEventListener('click',function(){
@@ -428,7 +540,11 @@
   levelNote.textContent=notes[game][level];
   muteBtn.textContent=muted?'🔇':'🔊';
   muteBtn.setAttribute('aria-label',muted?'Pornește sunetul':'Oprește sunetul');
-  selectGame('axis');
+  selectGame('axis',false);
+  window.addEventListener('resize',repositionRebe);
+  window.addEventListener('load',repositionRebe);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(repositionRebe);
+  setTimeout(repositionRebe,400);
 })();
 </script>
 </body>
