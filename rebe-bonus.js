@@ -4,8 +4,7 @@
 (function(){
   'use strict';
 
-  var VALUES = [3, 7, -1, -3, -7];
-  var SLOT_COUNT = VALUES.length;
+  var SLOT_COUNT = 5;
   var CARD_W = 18; // % din lățimea mesei
   var STEP = (100 - CARD_W) / (SLOT_COUNT - 1);
 
@@ -83,6 +82,13 @@
     return a;
   }
   function fmt(v){ return (v > 0 ? '+' : '−') + Math.abs(v); }
+  // cel puțin 2 recompense și 2 penalizări, a 5-a carte la întâmplare; toate valorile diferite
+  function makeValues(){
+    var pos = shuffle([1,2,3,4,5,6,7,8,9]), neg = shuffle([1,2,3,4,5,6,7,8,9]);
+    var vals = [pos.pop(), pos.pop(), -neg.pop(), -neg.pop()];
+    vals.push(Math.random() < 0.5 ? pos.pop() : -neg.pop());
+    return vals.sort(function(a, b){ return b - a; });
+  }
   function slotLeft(i){ return (i * STEP) + '%'; }
 
   function tone(freq, dur, type, delay){
@@ -141,7 +147,7 @@
 
     // slot[i] = cartea aflată pe poziția i
     var slots = [];
-    VALUES.forEach(function(v, i){
+    makeValues().forEach(function(v, i){
       var card = el('button', 'lb-card');
       card.type = 'button';
       card.tabIndex = -1;

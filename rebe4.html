@@ -26,7 +26,7 @@
   .top-actions{display:flex;align-items:center;gap:7px;}
   .mute-btn{border:0;background:#f1ecff;border-radius:50%;width:44px;height:44px;font-size:22px;}
   /* Rebe stă deasupra jocului ales */
-  .stations{position:relative;padding-top:118px;margin-top:16px;}
+  .stations{position:relative;padding-top:118px;margin-top:16px;overflow-x:clip;}
   .rebe{position:absolute;top:0;left:0;width:96px;height:118px;
     transition:left 1s cubic-bezier(.34,1.2,.64,1);z-index:5;pointer-events:none;}
   .rebe.no-anim{transition:none;}
@@ -237,7 +237,7 @@
   var level = Number(localStorage.getItem('rebe4_level')) || 1;
   if(level < 1 || level > 5 || !Number.isInteger(level)) level = 1;
   var stars = Number(localStorage.getItem('rebe_stars')) || 0;
-  var SWIM_EVERY = 3; // la câte răspunsuri corecte înoată Rebe
+  var SWIM_EVERY = 5; // la câte răspunsuri corecte înoată Rebe
   var correctCount = 0;
   var muted = localStorage.getItem('rebe_muted') === '1';
   var game = 'axis';
