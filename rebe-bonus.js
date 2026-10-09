@@ -1,41 +1,46 @@
-/* Level Bonus — 5 cărți (2 recompense, 3 penalizări) care se întorc,
+/* Level Bonus — 5 cărți (3 recompense, 2 penalizări) care se întorc,
    se amestecă în fața copilului, iar copilul alege una.
    Folosire: RebeBonus.show(function(delta){ ...aplică delta la stele... }); */
 (function(){
   'use strict';
 
   var SLOT_COUNT = 5;
-  var CARD_W = 18; // % din lățimea mesei
-  var STEP = (100 - CARD_W) / (SLOT_COUNT - 1);
+  // Ecran lat: 5 cărți pe un rând. Ecran înalt (telefon): 3 sus + 2 jos, ca să fie cât mai mari.
+  // x, y și cardW sunt în % din lățimea mesei; ratio = înălțimea mesei / lățime.
+  var LAYOUTS = {
+    wide: { ratio: .42, cardW: 18, slots: [{x:0,y:8},{x:20.5,y:8},{x:41,y:8},{x:61.5,y:8},{x:82,y:8}] },
+    tall: { ratio: 1.12, cardW: 31, slots: [{x:0,y:6},{x:34.5,y:6},{x:69,y:6},{x:17.25,y:58},{x:51.75,y:58}] }
+  };
+  var layout = LAYOUTS.wide;
 
   var CSS = [
-    '.lb-overlay{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;',
+    '.lb-overlay{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:8px;overflow:auto;',
     '  background:radial-gradient(circle at 50% 35%,rgba(109,40,217,.93),rgba(30,10,60,.97));opacity:0;transition:opacity .4s;',
     '  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);',
     '  font-family:inherit;-webkit-user-select:none;user-select:none;}',
     '.lb-overlay.on{opacity:1;}',
-    '.lb-box{width:min(640px,96vw);text-align:center;color:#fff;}',
-    '.lb-title{margin:0 0 4px;font-size:clamp(30px,7vw,48px);font-weight:900;letter-spacing:1px;color:#ffe066;',
+    '.lb-box{text-align:center;color:#fff;width:95vw;}',
+    '.lb-title{margin:0 0 2px;font-size:clamp(28px,6vw,52px);font-weight:900;letter-spacing:1px;color:#ffe066;',
     '  text-shadow:0 3px 0 #b45309,0 6px 18px rgba(0,0,0,.35);animation:lb-pop .6s cubic-bezier(.34,1.56,.64,1);}',
-    '.lb-msg{min-height:1.5em;margin:0 0 14px;font-size:clamp(17px,4vw,22px);font-weight:700;}',
+    '.lb-msg{min-height:1.5em;margin:0 0 8px;font-size:clamp(17px,4vw,22px);font-weight:700;}',
     '.lb-table{position:relative;width:100%;aspect-ratio:100/42;}',
-    '.lb-card{position:absolute;top:8%;width:' + CARD_W + '%;aspect-ratio:2/3;perspective:700px;cursor:default;',
+    '.lb-card{position:absolute;aspect-ratio:2/3;container-type:inline-size;perspective:700px;cursor:default;',
     '  border:0;padding:0;background:none;font:inherit;-webkit-tap-highlight-color:transparent;}',
     '.lb-card:focus{outline:none;}',
     '.lb-inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.4,.2,.2,1);}',
     '.lb-card.down .lb-inner{transform:rotateY(180deg);}',
-    '.lb-face{position:absolute;inset:0;border-radius:14px;backface-visibility:hidden;-webkit-backface-visibility:hidden;',
+    '.lb-face{position:absolute;inset:0;border-radius:max(14px,9cqw);backface-visibility:hidden;-webkit-backface-visibility:hidden;',
     '  display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 6px 0 rgba(0,0,0,.25),0 10px 22px rgba(0,0,0,.3);}',
     '.lb-front{border:4px solid #fff;}',
     '.lb-front.good{background:linear-gradient(160deg,#fef08a,#facc15 55%,#f59e0b);color:#7c2d12;}',
     '.lb-front.bad{background:linear-gradient(160deg,#fecdd3,#fb7185 55%,#e11d48);color:#fff;}',
-    '.lb-num{font-size:clamp(26px,7.5vw,48px);font-weight:900;line-height:1;}',
-    '.lb-star{font-size:clamp(16px,4.5vw,28px);margin-top:4px;}',
+    '.lb-num{font-size:clamp(26px,7.5vw,48px);font-size:max(22px,44cqw);font-weight:900;line-height:1;}',
+    '.lb-star{font-size:clamp(16px,4.5vw,28px);font-size:max(14px,28cqw);margin-top:4px;}',
     '.lb-back{transform:rotateY(180deg);border:4px solid #fff;overflow:hidden;',
     '  background:repeating-linear-gradient(45deg,#ec4899 0 10px,#db2777 10px 20px);}',
     '.lb-back::before{content:"";position:absolute;inset:8%;border-radius:10px;border:3px dashed rgba(255,255,255,.7);}',
     '.lb-back img{width:62%;height:auto;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3));}',
-    '.lb-back span{font-size:clamp(18px,5vw,30px);font-weight:900;color:#fff;text-shadow:0 2px 0 #9d174d;}',
+    '.lb-back span{font-size:clamp(18px,5vw,30px);font-size:max(18px,33cqw);font-weight:900;color:#fff;text-shadow:0 2px 0 #9d174d;}',
     '.lb-table.pick .lb-card{cursor:pointer;}',
     '.lb-table.pick .lb-card .lb-inner{animation:lb-wiggle 1.4s ease-in-out infinite;}',
     '.lb-table.pick .lb-card:nth-child(2) .lb-inner{animation-delay:-.3s;}',
@@ -82,14 +87,20 @@
     return a;
   }
   function fmt(v){ return (v > 0 ? '+' : '−') + Math.abs(v); }
-  // cel puțin 2 recompense și 2 penalizări, a 5-a carte la întâmplare; toate valorile diferite
+  // 3 recompense (+1, +2, +3) și 2 penalizări (−2, −4)
   function makeValues(){
-    var pos = shuffle([1,2,3,4,5,6,7,8,9]), neg = shuffle([1,2,3,4,5,6,7,8,9]);
-    var vals = [pos.pop(), pos.pop(), -neg.pop(), -neg.pop()];
-    vals.push(Math.random() < 0.5 ? pos.pop() : -neg.pop());
-    return vals.sort(function(a, b){ return b - a; });
+    return [3, 2, 1, -2, -4];
   }
-  function slotLeft(i){ return (i * STEP) + '%'; }
+  // poziția slotului i, în % din lățimea (x) și înălțimea (y) mesei
+  function slotPos(i){
+    var p = layout.slots[i];
+    return { x: p.x, y: p.y / layout.ratio };
+  }
+  function place(card, i){
+    var p = slotPos(i);
+    card.style.left = p.x + '%';
+    card.style.top = p.y + '%';
+  }
 
   function tone(freq, dur, type, delay){
     if(localStorage.getItem('rebe_muted') === '1') return;
@@ -115,14 +126,14 @@
   function loseSound(){ [392, 330, 262].forEach(function(f, i){ tone(f, 0.25, 'sawtooth', i*0.14); }); }
 
   function moveCard(card, from, to, lift, ms){
-    var a = parseFloat(from), b = parseFloat(to);
+    var a = slotPos(from), b = slotPos(to);
     var anim = card.animate([
-      { left: a + '%', transform: 'translateY(0) rotate(0deg)' },
-      { left: ((a + b) / 2) + '%', transform: 'translateY(' + lift + '%) rotate(' + (lift > 0 ? 6 : -6) + 'deg)', offset: .5 },
-      { left: b + '%', transform: 'translateY(0) rotate(0deg)' }
+      { left: a.x + '%', top: a.y + '%', transform: 'translateY(0) rotate(0deg)' },
+      { left: ((a.x + b.x) / 2) + '%', top: ((a.y + b.y) / 2) + '%', transform: 'translateY(' + lift + '%) rotate(' + (lift > 0 ? 6 : -6) + 'deg)', offset: .5 },
+      { left: b.x + '%', top: b.y + '%', transform: 'translateY(0) rotate(0deg)' }
     ], { duration: ms, easing: 'ease-in-out', fill: 'forwards' });
     return anim.finished.then(function(){
-      card.style.left = b + '%';
+      place(card, to);
       anim.cancel();
     });
   }
@@ -139,7 +150,12 @@
     var title = el('h2', 'lb-title', '🎁 Level Bonus! 🎁');
     var msg = el('p', 'lb-msg', 'Uită-te bine la cărți!');
     msg.setAttribute('aria-live', 'polite');
+    layout = window.innerHeight > window.innerWidth * 1.15 ? LAYOUTS.tall : LAYOUTS.wide;
+    // cât de lată poate fi masa ca să încapă pe înălțime (titlu + mesaj + rezultat + buton ≈ 250px)
+    box.style.width = 'min(95vw, max(260px, calc((100vh - 250px) / ' + layout.ratio + ')))';
+    box.style.width = 'min(95vw, max(260px, calc((100dvh - 250px) / ' + layout.ratio + ')))';
     var table = el('div', 'lb-table');
+    table.style.aspectRatio = '100 / ' + (layout.ratio * 100);
     var result = el('div', 'lb-result');
     box.appendChild(title); box.appendChild(msg); box.appendChild(table); box.appendChild(result);
     overlay.appendChild(box);
@@ -152,7 +168,8 @@
       card.type = 'button';
       card.tabIndex = -1;
       card.setAttribute('aria-label', 'Carte ' + fmt(v));
-      card.style.left = slotLeft(i);
+      card.style.width = layout.cardW + '%';
+      place(card, i);
       card._value = v;
       var inner = el('div', 'lb-inner');
       var front = el('div', 'lb-face lb-front ' + (v > 0 ? 'good' : 'bad'));
@@ -175,8 +192,8 @@
       var ci = slots[i], cj = slots[j];
       slots[i] = cj; slots[j] = ci;
       return Promise.all([
-        moveCard(ci, slotLeft(i), slotLeft(j), -55, ms),
-        moveCard(cj, slotLeft(j), slotLeft(i), 35, ms)
+        moveCard(ci, i, j, -55, ms),
+        moveCard(cj, j, i, 35, ms)
       ]);
     }
 

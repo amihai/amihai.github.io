@@ -140,8 +140,8 @@
     font-size:clamp(30px,8vw,44px);font-weight:800;}
   .colop .cell{height:1.35em;display:flex;align-items:center;justify-content:center;border-radius:12px;transition:background .2s;}
   .colop .hd{font-size:14px;height:auto;color:var(--c);padding:2px 0;}
-  .colop .sign{color:var(--purple);}
-  .colop .bar{grid-column:1/-1;height:5px;background:var(--ink);border-radius:3px;margin:2px 0;}
+  .colop .sign{color:var(--purple);justify-content:flex-start;align-items:flex-start;font-size:.8em;}
+  .colop .bar{grid-column:1/-2;height:5px;background:var(--ink);border-radius:3px;margin:2px 0;}
   .colop .res{border:3px dashed #c8b5f8;}
   .colop .res.filled{border-style:solid;border-color:var(--green);background:#eafaf0;animation:pop .25s ease;}
   .colop .act{background:var(--cl);}
@@ -645,15 +645,17 @@
       grid.appendChild(c);
       return c;
     }
-    cell('hd','',null);
+    // ca în manualele din România: semnul stă în dreapta sus, lângă primul număr
     [0,1,2].forEach(function(i){cell('hd',['S','Z','U'][i],i);});
-    cell('','',null);
+    cell('hd','',null);
     [0,1,2].forEach(function(i){cell('',String(ad[i]),i);});
     cell('sign',sym(t.op),null);
     [0,1,2].forEach(function(i){cell('',i<3-bLen?'':String(bd[i]),i);});
-    grid.appendChild(el('div','bar'));
     cell('','',null);
+    grid.appendChild(el('div','bar'));
+    grid.appendChild(el('div')); // locul de sub semn
     [0,1,2].forEach(function(i){res.push(cell('res','',i));});
+    cell('','',null);
     visual.appendChild(grid);
     function stepText(i){
       if(i<3-bLen) return 'La '+PLACE[i]+' nu avem ce '+(t.op==='+'?'aduna':'scădea')+': coborâm cifra '+ad[i]+'.';
