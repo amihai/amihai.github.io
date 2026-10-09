@@ -357,7 +357,7 @@
   var audio=null;
 
   var COLUMN_HINT='Așezăm unitățile sub unități, zecile sub zeci și sutele sub sute. Începem mereu cu unitățile (din dreapta), apoi zecile, apoi sutele. Fiecare coloană se socotește separat.';
-  var LINE_HINT='Pe aceeași linie socotim pe rând: sutele cu sutele, zecile cu zecile, unitățile cu unitățile. Scriem rezultatul de la stânga la dreapta: întâi sutele, apoi zecile, apoi unitățile.';
+  var LINE_HINT='Pe aceeași linie socotim pe rând: unitățile cu unitățile, zecile cu zecile, sutele cu sutele. Începem mereu cu unitățile (din dreapta), apoi zecile, apoi sutele — la fel ca în coloană.';
   var names={abacus:'🧮 Numărătoarea',column:'✏️ Calcule',detective:'🔍 Detectivul Rebe',balance:'⚖️ Balanța',shop:'🛒 La cumpărături'};
   var intros={
     abacus:'Hai să socotim pe numărătoare! 🧮',
@@ -646,7 +646,7 @@
     var inline=rand(0,1)===1;
     var ad=digits(t.a), bd=digits(t.b), rd=digits(t.r);
     var bLen=String(t.b).length;
-    var order=inline?[0,1,2]:[2,1,0], step=0;
+    var order=[2,1,0], step=0;
     var active=order[0], mistakes=0;
     var cols=[[],[],[]], res=[];
     title.textContent=inline?'✏️ Calcul pe aceeași linie':'✏️ Calcul în coloană';
@@ -706,7 +706,7 @@
     }
     function highlight(){
       cols.forEach(function(list,i){list.forEach(function(c){c.classList.toggle('act',i===active);});});
-      if(active>=0) say((step===0?(inline?'Începem cu sutele! ':'Începem cu unitățile! '):'')+stepText(active));
+      if(active>=0) say((step===0?'Începem cu unitățile! ':'')+stepText(active));
     }
     var pad=el('div','keypad');
     for(var d=0;d<=9;d++){
