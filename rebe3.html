@@ -344,8 +344,7 @@
 
   // ---------- Stare ----------
   var stars = parseInt(localStorage.getItem('rebe_stars') || '0', 10) || 0;
-  var SWIM_EVERY = 5; // la câte răspunsuri corecte înoată Rebe
-  var correctCount = 0;
+  var SWIM_EVERY = 5; // înoată Rebe când stelele ajung la un multiplu de 5
   var muted = localStorage.getItem('rebe_muted') === '1';
   var level = parseInt(localStorage.getItem('rebe3_level') || '1', 10) || 1;
   if(level < 1 || level > 5) level = 1;
@@ -448,7 +447,7 @@
     }
   }
 
-  // ---------- Rebe înoată (recompensă la fiecare SWIM_EVERY corecte) + Level Bonus ----------
+  // ---------- Rebe înoată (recompensă la fiecare SWIM_EVERY stele) + Level Bonus ----------
   function swim(){
     if(!swimLayer) return;
     var s = swimLayer.querySelector('.swimmer');
@@ -532,8 +531,7 @@
       for(var i=0;i<all.length;i++){ all[i].disabled = true; }
       addStar(); goodSound(); confetti();
       rebeState('happy', 700);
-      correctCount++;
-      if(correctCount % SWIM_EVERY === 0){ swim(); } else { speak(choice(PRAISE)); }
+      if(stars % SWIM_EVERY === 0){ swim(); } else { speak(choice(PRAISE)); }
       setTimeout(function(){ locked = false; games[current].newRound(); }, 1600);
     } else {
       btn.classList.add('wrong');

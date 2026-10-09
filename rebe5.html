@@ -146,6 +146,17 @@
   .colop .res.filled{border-style:solid;border-color:var(--green);background:#eafaf0;animation:pop .25s ease;}
   .colop .act{background:var(--cl);}
   .colop .res.act{border-color:var(--c);border-style:solid;}
+  /* ---------- Pe aceeași linie ---------- */
+  .lineop{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 4px;margin:10px auto;
+    font-size:clamp(28px,7.5vw,42px);font-weight:800;}
+  .lineop .grp{display:inline-flex;align-items:center;gap:2px;}
+  .lineop .dg{min-width:.68em;padding:0 2px;border-radius:10px;text-align:center;transition:background .2s,color .2s;}
+  .lineop .dg.act{background:var(--cl);color:var(--c);}
+  .lineop .opr{color:var(--purple);margin:0 .15em;}
+  .lineop .res{width:1.15em;height:1.35em;display:inline-flex;align-items:center;justify-content:center;
+    border:3px dashed #c8b5f8;border-radius:12px;}
+  .lineop .res.filled{border-style:solid;border-color:var(--green);background:#eafaf0;animation:pop .25s ease;}
+  .lineop .res.act{border-color:var(--c);border-style:solid;background:var(--cl);}
   .keypad{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;max-width:360px;margin:10px auto 0;}
   .key{border:3px solid #e6e0ff;border-radius:14px;background:#fff;height:54px;font-size:26px;font-weight:800;box-shadow:0 4px 0 #ded6ff;}
   .key:active{transform:translateY(2px);box-shadow:0 2px 0 #ded6ff;}
@@ -263,7 +274,7 @@
     </div>
   <nav class="games" aria-label="Alege jocul">
     <button class="game-btn" data-game="abacus" type="button"><span class="icon">🧮</span>Numără&shy;toarea</button>
-    <button class="game-btn" data-game="column" type="button"><span class="icon">✏️</span>În coloană</button>
+    <button class="game-btn" data-game="column" type="button"><span class="icon">✏️</span>Calcule</button>
     <button class="game-btn" data-game="detective" type="button"><span class="icon">🔍</span>Detecti&shy;vul</button>
     <button class="game-btn" data-game="balance" type="button"><span class="icon">⚖️</span>Balanța</button>
     <button class="game-btn" data-game="shop" type="button"><span class="icon">🛒</span>Cumpără&shy;turi</button>
@@ -338,25 +349,26 @@
   var level=Number(localStorage.getItem('rebe5_level'))||1;
   if(level<1 || level>5 || !Number.isInteger(level)) level=1;
   var stars=Number(localStorage.getItem('rebe_stars'))||0;
-  var SWIM_EVERY=5; // la câte răspunsuri corecte înoată Rebe
-  var correctCount=0;
+  var SWIM_EVERY=5; // înoată Rebe când stelele ajung la un multiplu de 5
   var muted=localStorage.getItem('rebe_muted')==='1';
   var game='abacus';
   var locked=false;
   var nextTimer=null;
   var audio=null;
 
-  var names={abacus:'🧮 Numărătoarea',column:'✏️ Calcul în coloană',detective:'🔍 Detectivul Rebe',balance:'⚖️ Balanța',shop:'🛒 La cumpărături'};
+  var COLUMN_HINT='Așezăm unitățile sub unități, zecile sub zeci și sutele sub sute. Începem mereu cu unitățile (din dreapta), apoi zecile, apoi sutele. Fiecare coloană se socotește separat.';
+  var LINE_HINT='Pe aceeași linie socotim pe rând: sutele cu sutele, zecile cu zecile, unitățile cu unitățile. Scriem rezultatul de la stânga la dreapta: întâi sutele, apoi zecile, apoi unitățile.';
+  var names={abacus:'🧮 Numărătoarea',column:'✏️ Calcule',detective:'🔍 Detectivul Rebe',balance:'⚖️ Balanța',shop:'🛒 La cumpărături'};
   var intros={
     abacus:'Hai să socotim pe numărătoare! 🧮',
-    column:'Scriem în coloană: unități sub unități, zeci sub zeci, sute sub sute! ✏️',
+    column:'Calculăm în coloană sau pe aceeași linie! ✏️',
     detective:'Robotul Calculo a socotit. Facem proba ca să vedem dacă a greșit! 🔍',
     balance:'Găsește numărul ascuns, ca balanța să stea dreaptă! ⚖️',
     shop:'Mergem la cumpărături și plătim cu bancnote! 🛒'
   };
   var hints={
     abacus:'Fiecare tijă are rolul ei: roz = sute, mov = zeci, albastru = unități. La adunare PUI bile, la scădere IEI bile — pe fiecare tijă câte arată cifra potrivită din al doilea număr.',
-    column:'Așezăm unitățile sub unități, zecile sub zeci și sutele sub sute. Începem mereu cu unitățile (din dreapta), apoi zecile, apoi sutele. Fiecare coloană se socotește separat.',
+    column:'',
     detective:'Proba adunării: din sumă scădem un termen și trebuie să obținem celălalt termen. Proba scăderii: adunăm diferența cu scăzătorul și trebuie să obținem descăzutul. Dacă proba nu „iese”, calculul e greșit!',
     balance:'Balanța stă dreaptă când talerele cântăresc la fel. Termenul necunoscut = suma − termenul cunoscut. Descăzutul = diferența + scăzătorul. Scăzătorul = descăzutul − diferența. Poți și să încerci: urmărește în ce parte se înclină balanța.',
     shop:'„În total” înseamnă adunare. „Rămân” sau „cu câți lei costă mai mult” înseamnă scădere. Pune pe tavă întâi bancnotele de 100, apoi pe cele de 10, apoi pe cele de 1.'
@@ -529,8 +541,7 @@
     stars++;
     localStorage.setItem('rebe_stars',String(stars));
     starCount.textContent=stars;
-    correctCount++;
-    if(correctCount%SWIM_EVERY===0) swim();
+    if(stars % SWIM_EVERY === 0) swim();
     else say(choice(PRAISE));
     beep(true);
     confetti();
@@ -629,42 +640,73 @@
     }));
   }
 
-  // ---------- 2. În coloană ----------
+  // ---------- 2. Calcule: în coloană sau pe aceeași linie ----------
   function columnRound(){
     var t=gen(randOp());
+    var inline=rand(0,1)===1;
     var ad=digits(t.a), bd=digits(t.b), rd=digits(t.r);
     var bLen=String(t.b).length;
-    var active=2, mistakes=0;
-    question.className='question';
-    question.textContent='Calculează în coloană: '+t.a+' '+sym(t.op)+' '+t.b;
-    var grid=el('div','colop');
+    var order=inline?[0,1,2]:[2,1,0], step=0;
+    var active=order[0], mistakes=0;
     var cols=[[],[],[]], res=[];
-    function cell(cls,text,col){
-      var c=el('div','cell '+cls+(col!=null?' '+PCLS[col]:''),text);
-      if(col!=null) cols[col].push(c);
-      grid.appendChild(c);
-      return c;
+    title.textContent=inline?'✏️ Calcul pe aceeași linie':'✏️ Calcul în coloană';
+    hints.column=inline?LINE_HINT:COLUMN_HINT;
+    question.className='question';
+    question.textContent=(inline?'Calculează pe aceeași linie: ':'Calculează în coloană: ')+t.a+' '+sym(t.op)+' '+t.b;
+    if(inline) buildLine(); else buildColumn();
+    function buildLine(){
+      var line=el('div','lineop');
+      line.setAttribute('aria-label',t.a+' '+sym(t.op)+' '+t.b+' egal');
+      function number(d,len){
+        var g=el('span','grp');
+        for(var i=3-len;i<3;i++){
+          var s=el('span','dg '+PCLS[i],String(d[i]));
+          cols[i].push(s);
+          g.appendChild(s);
+        }
+        line.appendChild(g);
+      }
+      number(ad,3);
+      line.appendChild(el('span','opr',sym(t.op)));
+      number(bd,bLen);
+      line.appendChild(el('span','opr','='));
+      var g=el('span','grp');
+      [0,1,2].forEach(function(i){
+        var r=el('span','res '+PCLS[i]);
+        cols[i].push(r);res.push(r);g.appendChild(r);
+      });
+      line.appendChild(g);
+      visual.appendChild(line);
     }
-    // ca în manualele din România: semnul stă în dreapta sus, lângă primul număr
-    [0,1,2].forEach(function(i){cell('hd',['S','Z','U'][i],i);});
-    cell('hd','',null);
-    [0,1,2].forEach(function(i){cell('',String(ad[i]),i);});
-    cell('sign',sym(t.op),null);
-    [0,1,2].forEach(function(i){cell('',i<3-bLen?'':String(bd[i]),i);});
-    cell('','',null);
-    grid.appendChild(el('div','bar'));
-    grid.appendChild(el('div')); // locul de sub semn
-    [0,1,2].forEach(function(i){res.push(cell('res','',i));});
-    cell('','',null);
-    visual.appendChild(grid);
+    function buildColumn(){
+      var grid=el('div','colop');
+      function cell(cls,text,col){
+        var c=el('div','cell '+cls+(col!=null?' '+PCLS[col]:''),text);
+        if(col!=null) cols[col].push(c);
+        grid.appendChild(c);
+        return c;
+      }
+      // ca în manualele din România: semnul stă în dreapta sus, lângă primul număr
+      [0,1,2].forEach(function(i){cell('hd',['S','Z','U'][i],i);});
+      cell('hd','',null);
+      [0,1,2].forEach(function(i){cell('',String(ad[i]),i);});
+      cell('sign',sym(t.op),null);
+      [0,1,2].forEach(function(i){cell('',i<3-bLen?'':String(bd[i]),i);});
+      cell('','',null);
+      grid.appendChild(el('div','bar'));
+      grid.appendChild(el('div')); // locul de sub semn
+      [0,1,2].forEach(function(i){res.push(cell('res','',i));});
+      cell('','',null);
+      visual.appendChild(grid);
+    }
     function stepText(i){
-      if(i<3-bLen) return 'La '+PLACE[i]+' nu avem ce '+(t.op==='+'?'aduna':'scădea')+': coborâm cifra '+ad[i]+'.';
+      if(i<3-bLen) return 'La '+PLACE[i]+' nu avem ce '+(t.op==='+'?'aduna':'scădea')+': '+(inline?'scriem':'coborâm')+' cifra '+ad[i]+'.';
       if(level<=2 || mistakes>0) return 'La '+PLACE[i]+': '+ad[i]+' '+sym(t.op)+' '+bd[i]+' = ?';
       return 'Ce scriem la '+PLACE[i]+'?';
     }
     function highlight(){
       cols.forEach(function(list,i){list.forEach(function(c){c.classList.toggle('act',i===active);});});
-      if(active>=0) say((active===2?'Începem cu unitățile! ':'')+stepText(active));
+      if(active>=0) say((step===0?(inline?'Începem cu sutele! ':'Începem cu unitățile! '):'')+stepText(active));
     }
     var pad=el('div','keypad');
     for(var d=0;d<=9;d++){
@@ -677,7 +719,8 @@
             tick();
             mistakes=0;
             pad.querySelectorAll('.wrong').forEach(function(w){w.classList.remove('wrong');});
-            active--;
+            step++;
+            active=step<3?order[step]:-1;
             if(active<0){
               highlight();
               win(t.a+' '+sym(t.op)+' '+t.b+' = '+t.r+' ✔');

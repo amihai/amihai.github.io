@@ -361,8 +361,7 @@
   var level=Number(localStorage.getItem('rebe6_level'))||1;
   if(level<1 || level>5 || !Number.isInteger(level)) level=1;
   var stars=Number(localStorage.getItem('rebe_stars'))||0;
-  var SWIM_EVERY=5; // la câte răspunsuri corecte înoată Rebe
-  var correctCount=0;
+  var SWIM_EVERY=5; // înoată Rebe când stelele ajung la un multiplu de 5
   var muted=localStorage.getItem('rebe_muted')==='1';
   var game='chest';
   var locked=false;
@@ -611,8 +610,7 @@
     stars++;
     localStorage.setItem('rebe_stars',String(stars));
     starCount.textContent=stars;
-    correctCount++;
-    if(correctCount%SWIM_EVERY===0) swim();
+    if(stars % SWIM_EVERY === 0) swim();
     else say(choice(PRAISE));
     beep(true);
     confetti();
