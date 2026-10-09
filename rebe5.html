@@ -349,7 +349,7 @@
   var level=Number(localStorage.getItem('rebe5_level'))||1;
   if(level<1 || level>5 || !Number.isInteger(level)) level=1;
   var stars=Number(localStorage.getItem('rebe_stars'))||0;
-  var SWIM_EVERY=5; // înoată Rebe când stelele ajung la un multiplu de 5
+  var SWIM_EVERY=10; // înoată Rebe când stelele ajung la un multiplu de 10
   var muted=localStorage.getItem('rebe_muted')==='1';
   var game='abacus';
   var locked=false;
