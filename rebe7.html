@@ -165,10 +165,6 @@
   .basket::before{content:"";position:absolute;left:18%;right:18%;top:-22px;height:24px;border:5px solid #b45309;border-bottom:0;border-radius:40px 40px 0 0;}
   .bcount{font-weight:800;font-size:clamp(16px,4vw,20px);color:#b45309;background:#fff7d6;border:2px solid #fbbf24;border-radius:999px;padding:0 10px;animation:pop .35s ease backwards;}
   .bcount.plus::before{content:"+ ";color:#a78bfa;}
-  .loose{display:flex;flex-direction:column;align-items:center;gap:4px;animation:pop .4s ease backwards;}
-  .plate{display:flex;flex-wrap:wrap;justify-content:center;max-width:120px;padding:8px 10px;border-radius:50%;background:radial-gradient(circle,#fff 55%,#e0e7ff 56%,#fff 70%);
-    border:3px solid #c7d2fe;font-size:clamp(16px,4.4vw,22px);}
-  .loose small{font-weight:700;color:#6b5b92;}
   .basket .gone{opacity:.25;filter:grayscale(1);}
 
   /* ---------- 2. Broscuța pe nuferi ---------- */
@@ -417,7 +413,7 @@
     fish:'Calculează ce scrie pe fiecare pește și compară cu numărul de pe găletușă. Atenție: „+” înseamnă adunare, „×” înseamnă înmulțire!'
   };
   var hints5={
-    basket:'Întâi aflăm câte fructe sunt în coșulețe (înmulțire), apoi adunăm sau scădem fructele din problemă.',
+    basket:'Întâi aflăm câte fructe sunt în coșulețe (înmulțire), apoi scădem fructele date prietenilor.',
     garden:'Întâi aflăm câte flori sunt într-un strat. Apoi înmulțim cu numărul de straturi la fel.',
     rocket:'La trei factori înmulțim pe rând: 2 × 3 × 4 → 2 × 3 = 6, apoi 6 × 4 = 24.',
     fish:'La trei factori înmulțim pe rând, de la stânga la dreapta.'
@@ -433,7 +429,7 @@
     'Tabla cu 3 și 4, înmulțirea cu 1 și cu 0 (ex. 4 × 3, 7 × 1, 6 × 0)',
     'Tabla cu 6, 7, 8 și 9 (ex. 4 × 7)',
     'Toată tabla înmulțirii, până la 100, schimbăm factorii între ei (ex. 6 × 9 = 9 × 6)',
-    'Provocare: trei factori și probleme cu două operații (ex. 2 × 3 × 4, 3 × 6 + 5)'];
+    'Provocare: trei factori și probleme cu două operații (ex. 2 × 3 × 4, 3 × 6 − 5)'];
   var TABLES=[null,[2,5,10],[3,4],[6,7,8,9],[2,3,4,5,6,7,8,9,10],[2,3,4,5,6,7,8,9,10]];
   var PRAISE=['Bravo! Ai câștigat o stea! ⭐','Super! Încă o stea! 🌟','Excelent! Știi să înmulțești! ✖️⭐','Ești grozavă! 💖⭐','Ce socoteală frumoasă! 🎉'];
   var FRUITS=[{e:'🍎',n:'mere',a:'merele'},{e:'🍓',n:'căpșuni',a:'căpșunile'},{e:'🍐',n:'pere',a:'perele'},{e:'🍊',n:'portocale',a:'portocalele'},
@@ -735,8 +731,7 @@
     var fr=choice(FRUITS), P5=level===5, f, k, n, extra=null;
     if(P5){
       f=fact({lo:2,hi:5,max:60});
-      var plus=rand(0,1)===1;
-      extra=plus?{op:'+',e:rand(2,Math.min(9,100-f.a*f.b))}:{op:'−',e:rand(1,Math.min(9,f.a*f.b-1))};
+      extra={op:'−',e:rand(2,Math.min(9,f.a*f.b-1))};
     } else f=fact({lo:2,hi:level>=4?6:5});
     k=f.a;n=f.b;
     var P=k*n;
@@ -752,15 +747,6 @@
       bk.appendChild(b);
       row.appendChild(bk);
       baskets.push(bk);
-    }
-    if(extra && extra.op==='+'){
-      var loose=el('div','loose');
-      loose.style.animationDelay=(k*0.08)+'s';
-      var plate=el('div','plate');
-      for(var q=0;q<extra.e;q++) plate.appendChild(el('span',null,fr.e));
-      loose.appendChild(plate);
-      loose.appendChild(el('small',null,'pe masă'));
-      row.appendChild(loose);
     }
     visual.appendChild(row);
     function showCounts(){
@@ -784,11 +770,10 @@
       say('Fiecare coșuleț are la fel de multe '+fr.n+'. Scrie adunarea! ➕');
     } else {
       var story=el('p','story','În '+k+' coșulețe sunt câte '+n+' '+fr.n+'. '+
-        (extra.op==='+'?'Pe masă mai sunt '+extra.e+' '+fr.n+'. Câte '+fr.n+' sunt în total?':
-          'Rebe le dă prietenilor '+extra.e+' '+fr.n+'. Câte '+fr.n+' au rămas?'));
+        'Rebe le dă prietenilor '+extra.e+' '+fr.n+'. Câte '+fr.n+' au rămas?');
       question.appendChild(story);
       step2();
-      say('Problemă cu două operații! Întâi înmulțirea, apoi '+(extra.op==='+'?'adunarea':'scăderea')+'. 🧩');
+      say('Problemă cu două operații! Întâi înmulțirea, apoi scăderea. 🧩');
     }
     function step2(){
       var s2=step(P5?'Pasul 1: Câte '+fr.n+' sunt în coșulețe? Alege înmulțirea!':
@@ -809,12 +794,10 @@
       say('Câte '+fr.n+' sunt? Scrie produsul cu tastele! 🔢');
     }
     function step4(){
-      var R=extra.op==='+'?P+extra.e:P-extra.e;
-      if(extra.op==='−'){
-        var items=row.querySelectorAll('.basket span');
-        for(var i=0;i<extra.e;i++) items[items.length-1-i].classList.add('gone');
-      }
-      var s4=step('Pasul 3: '+(extra.op==='+'?'Adună și '+fr.a+' de pe masă!':'Scade ce le-a dat Rebe prietenilor! '+fr.e));
+      var R=P-extra.e;
+      var items=row.querySelectorAll('.basket span');
+      for(var i=0;i<extra.e;i++) items[items.length-1-i].classList.add('gone');
+      var s4=step('Pasul 3: Scade ce le-a dat Rebe prietenilor! '+fr.e);
       var slot=slotEl();
       s4.appendChild(eqEl([{v:P,k:'p'},extra.op,{v:extra.e},'=',{v:slot}]));
       numPad(s4,slot,R,function(){
