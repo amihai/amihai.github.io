@@ -97,6 +97,14 @@
   @keyframes swim-kick{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}
   .swim-bubble{fill:#fff;opacity:.7;animation:swim-bub 1.3s ease-in infinite;}
   @keyframes swim-bub{0%{opacity:.7;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(-34px,-20px) scale(.3)}}
+  /* Cer cu nori */
+  .sky{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;}
+  .cloud-wrap{position:absolute;left:0;animation:drift linear infinite;will-change:transform;}
+  .cloud{position:relative;width:130px;height:42px;background:#fff;border-radius:42px;opacity:.85;filter:blur(1px);}
+  .cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%;}
+  .cloud::before{width:58px;height:58px;top:-26px;left:20px;}
+  .cloud::after{width:42px;height:42px;top:-18px;left:66px;}
+  @keyframes drift{from{transform:translateX(-35vw)}to{transform:translateX(135vw)}}
   /* Confetti */
   .confetti-layer{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:50;}
   .confetti-piece{position:absolute;top:-24px;width:11px;height:15px;border-radius:2px;animation:fall linear forwards;}
@@ -262,6 +270,14 @@
 </style>
 </head>
 <body>
+<div class="sky" aria-hidden="true">
+  <div class="cloud-wrap" style="top:5%;animation-duration:78s;animation-delay:-6s"><div class="cloud" style="transform:scale(1.1);opacity:.9"></div></div>
+  <div class="cloud-wrap" style="top:15%;animation-duration:110s;animation-delay:-55s"><div class="cloud" style="transform:scale(.6);opacity:.72"></div></div>
+  <div class="cloud-wrap" style="top:28%;animation-duration:64s;animation-delay:-22s"><div class="cloud" style="transform:scale(1.4);opacity:.85"></div></div>
+  <div class="cloud-wrap" style="top:45%;animation-duration:125s;animation-delay:-85s"><div class="cloud" style="transform:scale(.5);opacity:.68"></div></div>
+  <div class="cloud-wrap" style="top:60%;animation-duration:92s;animation-delay:-38s"><div class="cloud" style="transform:scale(.95);opacity:.8"></div></div>
+  <div class="cloud-wrap" style="top:75%;animation-duration:84s;animation-delay:-63s"><div class="cloud" style="transform:scale(1.2);opacity:.85"></div></div>
+</div>
 <div class="wrap">
   <header>
     <a href="rebe.html">← Jocurile lui Rebe</a>
