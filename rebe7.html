@@ -383,7 +383,7 @@
   var gameButtons=Array.from(document.querySelectorAll('.game-btn'));
   var levelButtons=Array.from(document.querySelectorAll('.lvl'));
   var CONFETTI_COLORS=['#ff5ea8','#8b5cf6','#38bdf8','#34d399','#fbbf24','#fb923c','#f472b6'];
-  var MUL='·'; // semnul înmulțirii din programa școlară
+  var MUL='×'; // semnul înmulțirii
   var level=Number(localStorage.getItem('rebe7_level'))||1;
   if(level<1 || level>5 || !Number.isInteger(level)) level=1;
   var stars=Number(localStorage.getItem('rebe_stars'))||0;
@@ -406,30 +406,30 @@
     fish:'Prinde doar peștii care au rezultatul de pe găletușă! 🐠'
   };
   var hints={
-    basket:'Numără câte fructe sunt într-un coșuleț. Adunăm acest număr de atâtea ori câte coșulețe sunt. Adunarea repetată de termeni egali se scrie mai scurt ca înmulțire: 4 + 4 + 4 = 3 · 4 („de 3 ori câte 4”).',
-    frog:'Broscuța sare de fiecare dată la fel de mult, deci adunăm mereu același număr: 0, 3, 6, 9… Așa numărăm din 3 în 3! Numărul de sărituri · lungimea unei sărituri = nufărul unde ajunge.',
-    garden:'Numără rândurile și câte flori sunt pe un rând. Dacă întoarcem grădina, rândurile se schimbă, dar florile sunt tot atâtea: 3 · 5 = 5 · 3.',
+    basket:'Numără câte fructe sunt într-un coșuleț. Adunăm acest număr de atâtea ori câte coșulețe sunt. Adunarea repetată de termeni egali se scrie mai scurt ca înmulțire: 4 + 4 + 4 = 3 × 4 („de 3 ori câte 4”).',
+    frog:'Broscuța sare de fiecare dată la fel de mult, deci adunăm mereu același număr: 0, 3, 6, 9… Așa numărăm din 3 în 3! Numărul de sărituri × lungimea unei sărituri = nufărul unde ajunge.',
+    garden:'Numără rândurile și câte flori sunt pe un rând. Dacă întoarcem grădina, rândurile se schimbă, dar florile sunt tot atâtea: 3 × 5 = 5 × 3.',
     rocket:'Folosește tabla înmulțirii. Dacă nu-ți amintești, numără din 2 în 2, din 3 în 3… de câte ori spune primul factor.',
-    fish:'Calculează ce scrie pe fiecare pește și compară cu numărul de pe găletușă. Atenție: „+” înseamnă adunare, „·” înseamnă înmulțire!'
+    fish:'Calculează ce scrie pe fiecare pește și compară cu numărul de pe găletușă. Atenție: „+” înseamnă adunare, „×” înseamnă înmulțire!'
   };
   var hints5={
     basket:'Întâi aflăm câte fructe sunt în coșulețe (înmulțire), apoi adunăm sau scădem fructele din problemă.',
     garden:'Întâi aflăm câte flori sunt într-un strat. Apoi înmulțim cu numărul de straturi la fel.',
-    rocket:'La trei factori înmulțim pe rând: 2 · 3 · 4 → 2 · 3 = 6, apoi 6 · 4 = 24.',
+    rocket:'La trei factori înmulțim pe rând: 2 × 3 × 4 → 2 × 3 = 6, apoi 6 × 4 = 24.',
     fish:'La trei factori înmulțim pe rând, de la stânga la dreapta.'
   };
   var RULES=[
-    '➕ Adunarea repetată de termeni egali se scrie ca înmulțire: 5 + 5 + 5 = 3 · 5.',
-    '🔤 În 3 · 5 = 15, numerele 3 și 5 sunt factorii, iar 15 este produsul.',
-    '🔄 Dacă schimbăm factorii între ei, produsul nu se schimbă: 3 · 5 = 5 · 3.',
-    '1️⃣ Un număr înmulțit cu 1 rămâne același: 7 · 1 = 7.',
-    '0️⃣ Orice număr înmulțit cu 0 dă 0: 7 · 0 = 0.'
+    '➕ Adunarea repetată de termeni egali se scrie ca înmulțire: 5 + 5 + 5 = 3 × 5.',
+    '🔤 În 3 × 5 = 15, numerele 3 și 5 sunt factorii, iar 15 este produsul.',
+    '🔄 Dacă schimbăm factorii între ei, produsul nu se schimbă: 3 × 5 = 5 × 3.',
+    '1️⃣ Un număr înmulțit cu 1 rămâne același: 7 × 1 = 7.',
+    '0️⃣ Orice număr înmulțit cu 0 dă 0: 7 × 0 = 0.'
   ];
-  var LEVEL_NOTES=['','Înmulțirea ca adunare repetată · tabla cu 2, 5 și 10 (ex. 3 · 5)',
-    'Tabla cu 3 și 4 · înmulțirea cu 1 și cu 0 (ex. 4 · 3, 7 · 1, 6 · 0)',
-    'Tabla cu 6, 7, 8 și 9 (ex. 4 · 7)',
-    'Toată tabla înmulțirii, până la 100 · schimbăm factorii între ei (ex. 6 · 9 = 9 · 6)',
-    'Provocare: trei factori și probleme cu două operații (ex. 2 · 3 · 4, 3 · 6 + 5)'];
+  var LEVEL_NOTES=['','Înmulțirea ca adunare repetată, tabla cu 2, 5 și 10 (ex. 3 × 5)',
+    'Tabla cu 3 și 4, înmulțirea cu 1 și cu 0 (ex. 4 × 3, 7 × 1, 6 × 0)',
+    'Tabla cu 6, 7, 8 și 9 (ex. 4 × 7)',
+    'Toată tabla înmulțirii, până la 100, schimbăm factorii între ei (ex. 6 × 9 = 9 × 6)',
+    'Provocare: trei factori și probleme cu două operații (ex. 2 × 3 × 4, 3 × 6 + 5)'];
   var TABLES=[null,[2,5,10],[3,4],[6,7,8,9],[2,3,4,5,6,7,8,9,10],[2,3,4,5,6,7,8,9,10]];
   var PRAISE=['Bravo! Ai câștigat o stea! ⭐','Super! Încă o stea! 🌟','Excelent! Știi să înmulțești! ✖️⭐','Ești grozavă! 💖⭐','Ce socoteală frumoasă! 🎉'];
   var FRUITS=[{e:'🍎',n:'mere',a:'merele'},{e:'🍓',n:'căpșuni',a:'căpșunile'},{e:'🍐',n:'pere',a:'perele'},{e:'🍊',n:'portocale',a:'portocalele'},
@@ -511,7 +511,7 @@
     });
     return row;
   }
-  // a · b = ?  (cu denumirile factor / produs)
+  // a × b = ?  (cu denumirile factor / produs)
   function mulEq(a,b,slot,labels,cls){
     return eqEl([{v:a,k:'f',l:labels?'factor':null},MUL,{v:b,k:'g',l:labels?'factor':null},'=',{v:slot,k:'p',l:labels?'produs':null}],cls);
   }
@@ -706,7 +706,7 @@
   // variante de înmulțire pentru „de a ori câte b”
   function mulOptions(a,b,why){
     var items=[{label:mul(a,b),ok:true}];
-    items.push({label:a+' + '+b,ok:false,why:'Cu „+” am aduna doar '+a+' și '+b+'. Pentru termeni egali repetați folosim înmulțirea „·”.'});
+    items.push({label:a+' + '+b,ok:false,why:'Cu „+” am aduna doar '+a+' și '+b+'. Pentru termeni egali repetați folosim înmulțirea „×”.'});
     if(a!==b) items.push({label:mul(b,b),ok:false,why:why.count});
     items.push({label:mul(a+1,b),ok:false,why:why.count});
     if(b<10) items.push({label:mul(a,b+1),ok:false,why:why.size});
@@ -1103,7 +1103,7 @@
       return {T:T,good:pick,bad:shuffle(bad).slice(0,3)};
     }
     return {T:12,good:[{label:mul(3,4)},{label:mul(4,3)},{label:rep(6,2)}],
-      bad:[{label:'3 + 4',why:'Atenție, aici e adunare! ➕'},{label:mul(3,5),why:'3 · 5 = 15, nu 12.'},{label:mul(2,5),why:'2 · 5 = 10, nu 12.'}]};
+      bad:[{label:'3 + 4',why:'Atenție, aici e adunare! ➕'},{label:mul(3,5),why:'3 × 5 = 15, nu 12.'},{label:mul(2,5),why:'2 × 5 = 10, nu 12.'}]};
   }
   function fishRound(){
     var S=fishSet(), found=0;
