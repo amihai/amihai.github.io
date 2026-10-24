@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rebe - Înmulțirea</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--pink:#ff5ea8;--purple:#8b5cf6;--green:#34d399;--ink:#3b2b57;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;min-height:100vh;padding:12px;
+    font-family:'Fredoka','Comic Sans MS','Chalkboard SE',system-ui,sans-serif;
+    color:var(--ink);background:linear-gradient(180deg,#a9e0fb,#c9edff 42%,#eaf8ff);
+  }
+  button{font-family:inherit;cursor:pointer;color:inherit;}
+  .wrap{max-width:920px;margin:auto;}
+  header,.panel,.levelbar,.speech,.game-btn{background:#fff;border:3px solid #fff;box-shadow:0 8px 22px rgba(139,92,246,.15);}
+  header{display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:22px;padding:10px 16px;}
+  header h1{margin:0;font-size:clamp(18px,4.5vw,28px);color:#8545cf;}
+  header a{color:var(--purple);font-weight:700;text-decoration:none;white-space:nowrap;}
+  header a:hover{text-decoration:underline;}
+  .stars{white-space:nowrap;background:#fff7d6;border:2px solid #ffd766;border-radius:999px;padding:6px 10px;font-weight:700;}
+  .top-actions{display:flex;align-items:center;gap:7px;}
+  .mute-btn{border:0;background:#f1ecff;border-radius:50%;width:44px;height:44px;font-size:22px;}
+  /* Rebe stă deasupra jocului ales */
+  .stations{position:relative;padding-top:118px;margin-top:16px;overflow-x:clip;}
+  .rebe{position:absolute;top:0;left:0;width:96px;height:118px;
+    transition:left 1s cubic-bezier(.34,1.2,.64,1);z-index:5;pointer-events:none;}
+  .rebe.no-anim{transition:none;}
+  .rebe-inner{position:absolute;inset:0;transform-origin:50% 100%;animation:bob 2.4s ease-in-out infinite;}
+  .rebe.walking .rebe-inner{animation:waddle .34s ease-in-out infinite;}
+  .rebe.happy .rebe-inner{animation:jump .7s ease;}
+  .rebe.oops .rebe-inner{animation:shake .5s ease;}
+  .rebe-head{position:absolute;top:0;left:50%;transform:translateX(-50%);width:58px;height:auto;z-index:2;
+    filter:drop-shadow(0 2px 3px rgba(0,0,0,.2));}
+  .rebe-body{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:58px;height:auto;z-index:1;overflow:visible;}
+  .arm-wave{transform-box:fill-box;transform-origin:0% 100%;animation:wave 1.6s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  @keyframes waddle{0%,100%{transform:translateY(-3px) rotate(-5deg)}50%{transform:translateY(-3px) rotate(5deg)}}
+  @keyframes jump{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-30px) scale(1.06) rotate(-4deg)}55%{transform:translateY(0) scale(1)}70%{transform:translateY(-14px) rotate(3deg)}100%{transform:translateY(0)}}
+  @keyframes shake{0%,100%{transform:rotate(0)}20%{transform:rotate(-9deg)}40%{transform:rotate(9deg)}60%{transform:rotate(-6deg)}80%{transform:rotate(6deg)}}
+  @keyframes wave{0%,100%{transform:rotate(0)}50%{transform:rotate(-22deg)}}
+  .speech{position:relative;margin:6px auto 0;max-width:560px;text-align:center;border-color:var(--purple);border-radius:18px;
+    padding:12px 18px;font-size:clamp(15px,3.4vw,19px);font-weight:500;animation:pop .3s ease;}
+  .speech::after{content:"";position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+    border:8px solid transparent;border-bottom-color:var(--purple);}
+  @keyframes pop{0%{transform:scale(.85);opacity:0}100%{transform:scale(1);opacity:1}}
+  .games{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;}
+  .game-btn{border-radius:18px;padding:10px 4px;font-size:clamp(12px,2.8vw,16px);font-weight:700;min-height:76px;}
+  .game-btn .icon{display:block;font-size:clamp(22px,6vw,32px);margin-bottom:2px;}
+  .game-btn.active{border-color:var(--pink);background:#fff0f7;box-shadow:0 8px 20px rgba(255,94,168,.3);}
+  .levelbar{border-radius:18px;margin-top:14px;padding:10px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;}
+  .levelbar strong{margin-right:3px;}
+  .lvl{border:3px solid #e6e0ff;border-radius:12px;background:#fff;min-width:42px;height:42px;font-weight:700;font-size:18px;}
+  .lvl.active{border-color:var(--green);background:#eafaf0;}
+  .level-note{flex-basis:100%;text-align:center;color:#665887;margin:0;font-size:14px;}
+  .panel{border-radius:26px;margin-top:16px;padding:18px 12px 24px;text-align:center;min-height:340px;}
+  .panel h2{font-size:clamp(20px,4.5vw,26px);margin:0 0 12px;}
+  .question{font-size:clamp(18px,4.2vw,24px);font-weight:700;margin:8px 0 12px;}
+  .detail{font-size:clamp(15px,3.4vw,18px);color:#6b5b92;margin:8px 0;}
+  .answers,.tiles,.slots{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:14px auto;}
+  .ans,.tile{border:3px solid #e6e0ff;border-radius:18px;background:#fff;min-width:70px;min-height:60px;padding:9px 14px;
+    font-size:clamp(22px,5vw,28px);font-weight:700;box-shadow:0 5px 0 #ded6ff;}
+  .ans:hover:not(:disabled),.tile:hover:not(:disabled),.lvl:hover,.game-btn:hover{border-color:var(--pink);}
+  .ans:disabled,.tile:disabled{cursor:default;}
+  .ans.correct,.tile.correct{background:#d7fbe8;border-color:var(--green);box-shadow:0 5px 0 #79e0b3;}
+  .ans.wrong,.tile.wrong{background:#ffe0e6;border-color:#e23e8c;}
+  .controls{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:20px;}
+  .controls button{border:0;border-radius:16px;padding:10px 18px;font-size:16px;font-weight:700;box-shadow:0 5px 0 rgba(0,0,0,.14);}
+  .hint-btn{background:linear-gradient(90deg,#fbbf24,#fb923c);}
+  .again{background:linear-gradient(90deg,#38bdf8,#8b5cf6);color:#fff;}
+  .hint-box{margin:16px auto 0;max-width:580px;text-align:left;background:#fffbe9;border:3px solid #fbbf24;border-radius:18px;padding:14px 16px;font-size:17px;line-height:1.5;}
+  [hidden]{display:none!important;}
+  footer{text-align:center;margin:18px 0;color:#8175a7;font-size:14px;}
+  .swim-layer{position:fixed;inset:0;z-index:48;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .5s;}
+  .swim-layer.on{opacity:1;}
+  .swim-water{position:absolute;inset:0;background:linear-gradient(180deg,rgba(56,189,248,0) 34%,rgba(56,189,248,.14) 60%,rgba(14,165,233,.22) 100%);}
+  .swim-wave{position:absolute;left:0;width:220%;height:20px;top:50%;
+    background:radial-gradient(circle at 24px 20px,rgba(255,255,255,0) 16px,rgba(255,255,255,.55) 17px,rgba(255,255,255,0) 19px) repeat-x;
+    background-size:64px 20px;animation:swim-wave 1.8s linear infinite;opacity:.5;}
+  @keyframes swim-wave{from{transform:translateX(0)}to{transform:translateX(-64px)}}
+  .swimmer{position:absolute;top:42%;left:0;width:190px;height:112px;
+    animation:swim-across 10s linear forwards, swim-bob 1.1s ease-in-out infinite;}
+  @keyframes swim-across{from{transform:translateX(-26vw)}to{transform:translateX(126vw)}}
+  @keyframes swim-bob{0%,100%{margin-top:0}50%{margin-top:-12px}}
+  .swim-svg{width:100%;height:100%;overflow:visible;display:block;}
+  .swim-head{position:absolute;right:2px;top:2px;width:52px;height:auto;transform:rotate(-16deg);filter:drop-shadow(0 2px 3px rgba(0,0,0,.2));}
+  .swim-arm-f,.swim-arm-b,.swim-leg-a,.swim-leg-b,.swim-bubble{transform-box:view-box;}
+  .swim-arm-f{transform-origin:145px 58px;animation:swim-stroke .8s ease-in-out infinite;}
+  .swim-arm-b{transform-origin:145px 60px;animation:swim-stroke .8s ease-in-out infinite;animation-delay:-.4s;}
+  @keyframes swim-stroke{0%{transform:rotate(-38deg)}50%{transform:rotate(48deg)}100%{transform:rotate(-38deg)}}
+  .swim-leg-a{transform-origin:55px 64px;animation:swim-kick .34s ease-in-out infinite;}
+  .swim-leg-b{transform-origin:55px 70px;animation:swim-kick .34s ease-in-out infinite;animation-delay:-.17s;}
+  @keyframes swim-kick{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}
+  .swim-bubble{fill:#fff;opacity:.7;animation:swim-bub 1.3s ease-in infinite;}
+  @keyframes swim-bub{0%{opacity:.7;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(-34px,-20px) scale(.3)}}
+  /* Confetti */
+  .confetti-layer{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:50;}
+  .confetti-piece{position:absolute;top:-24px;width:11px;height:15px;border-radius:2px;animation:fall linear forwards;}
+  @keyframes fall{
+    0%{transform:translateY(-24px) rotate(0);opacity:1}
+    100%{transform:translateY(105vh) rotate(720deg);opacity:.9}
+  }
+  /* ---------- rebe7: înmulțirea ---------- */
+  .kf{--kc:#0284c7;}
+  .kg{--kc:#7c3aed;}
+  .kp{--kc:#db2777;}
+  .result-line{display:inline-block;margin:14px auto 0;font-size:clamp(17px,4.2vw,23px);font-weight:700;color:#065f46;
+    background:#e9fbf2;border:3px solid var(--green);border-radius:16px;padding:8px 14px;animation:pop .3s ease;}
+  .rules{margin:8px 0 0;padding-left:20px;}
+  .rules li{margin:4px 0;}
+  .story{max-width:600px;margin:0 auto 6px;font-size:clamp(16px,3.8vw,20px);font-weight:600;color:#5b4d80;line-height:1.45;}
+
+  /* ---------- Egalități colorate ---------- */
+  .eq{display:flex;align-items:flex-start;justify-content:center;gap:clamp(6px,2vw,14px);flex-wrap:wrap;margin:6px auto;}
+  .eq .n{display:flex;flex-direction:column;align-items:center;min-width:1.6em;}
+  .eq .v,.eq .o{font-size:clamp(28px,7.5vw,42px);font-weight:800;line-height:1.2;}
+  .eq .v{color:var(--kc,var(--ink));}
+  .eq .o{color:#a78bfa;}
+  .eq .l{font-size:clamp(11px,2.8vw,13px);font-weight:700;color:var(--kc,#7c6aa8);}
+  .eq.small .v,.eq.small .o{font-size:clamp(22px,5.6vw,30px);}
+  .eq .slot{display:inline-block;min-width:2.4em;padding:0 8px;border:3px dashed #c8b5f8;border-radius:12px;background:#fdfcff;color:#b9a6f3;text-align:center;}
+  .eq .slot.typing{color:var(--ink);border-style:solid;border-color:var(--purple);}
+  .eq .slot.ok{border-style:solid;border-color:var(--green);background:#eafaf0;animation:pop .3s ease;}
+  .eq .slot.bad{animation:shake-x .4s ease;}
+  @keyframes shake-x{0%,100%{transform:translateX(0)}25%,75%{transform:translateX(-6px)}50%{transform:translateX(6px)}}
+
+  /* ---------- Pași + tastatură ---------- */
+  .step{margin:12px auto 0;max-width:620px;padding:10px 12px;border-radius:18px;background:#faf7ff;border:3px solid #ece4ff;animation:pop .3s ease;}
+  .step h3{margin:0 0 4px;font-size:clamp(15px,3.6vw,19px);}
+  .step .answers{margin:8px auto 4px;}
+  .step.done{background:#f3fcf7;border-color:#c8f5dc;}
+  .ans.wide{font-size:clamp(18px,4.6vw,24px);}
+  .numpad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-width:270px;margin:10px auto 2px;}
+  .key{border:3px solid #e6e0ff;border-radius:14px;background:#fff;height:54px;font-size:26px;font-weight:800;box-shadow:0 4px 0 #ded6ff;}
+  .key:active{transform:translateY(2px);box-shadow:0 2px 0 #ded6ff;}
+  .key.ok{background:#d1fae5;border-color:#34d399;box-shadow:0 4px 0 #6ee7b7;}
+  .key.del{background:#fff1f2;border-color:#fecdd3;box-shadow:0 4px 0 #fecdd3;}
+  .numpad.off{opacity:.45;pointer-events:none;}
+  .counter{display:inline-block;margin-top:4px;font-weight:800;background:#f1ecff;border-radius:999px;padding:4px 14px;}
+
+  /* ---------- 1. Coșulețele ---------- */
+  .baskets{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:22px 12px;margin:22px auto 6px;max-width:680px;}
+  .bk{display:flex;flex-direction:column;align-items:center;gap:6px;animation:pop .4s ease backwards;}
+  .basket{position:relative;display:grid;gap:1px 2px;justify-content:center;align-content:center;
+    min-width:clamp(78px,21vw,104px);min-height:clamp(60px,15vw,74px);padding:8px 8px 10px;
+    background:repeating-linear-gradient(90deg,#fcd9a0 0 8px,#f8c77c 8px 16px);
+    border:4px solid #d97706;border-radius:12px 12px 30px 30px;box-shadow:0 5px 0 #b45309;
+    font-size:clamp(16px,4.4vw,22px);line-height:1.15;}
+  .basket::before{content:"";position:absolute;left:18%;right:18%;top:-22px;height:24px;border:5px solid #b45309;border-bottom:0;border-radius:40px 40px 0 0;}
+  .bcount{font-weight:800;font-size:clamp(16px,4vw,20px);color:#b45309;background:#fff7d6;border:2px solid #fbbf24;border-radius:999px;padding:0 10px;animation:pop .35s ease backwards;}
+  .bcount.plus::before{content:"+ ";color:#a78bfa;}
+  .loose{display:flex;flex-direction:column;align-items:center;gap:4px;animation:pop .4s ease backwards;}
+  .plate{display:flex;flex-wrap:wrap;justify-content:center;max-width:120px;padding:8px 10px;border-radius:50%;background:radial-gradient(circle,#fff 55%,#e0e7ff 56%,#fff 70%);
+    border:3px solid #c7d2fe;font-size:clamp(16px,4.4vw,22px);}
+  .loose small{font-weight:700;color:#6b5b92;}
+  .basket .gone{opacity:.25;filter:grayscale(1);}
+
+  /* ---------- 2. Broscuța pe nuferi ---------- */
+  .pond{position:relative;margin:10px auto 0;max-width:680px;padding:58px 12px 18px;border-radius:26px;
+    display:flex;flex-wrap:wrap;justify-content:center;gap:52px 10px;overflow:hidden;
+    background:radial-gradient(circle at 20% 30%,rgba(255,255,255,.35) 0 8px,transparent 9px),
+      radial-gradient(circle at 75% 70%,rgba(255,255,255,.3) 0 6px,transparent 7px),
+      linear-gradient(180deg,#7dd3fc,#38bdf8 60%,#0ea5e9);background-size:90px 70px,120px 90px,auto;}
+  .pad{position:relative;width:clamp(50px,12.5vw,66px);height:clamp(50px,12.5vw,66px);border-radius:50%;
+    display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;
+    background:radial-gradient(circle at 35% 30%,#bbf7d0,#4ade80 45%,#16a34a 85%);box-shadow:0 5px 0 rgba(21,101,52,.55);
+    font-weight:800;font-size:clamp(15px,4vw,20px);color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.3);transition:transform .2s;}
+  .pad::before{content:"";position:absolute;top:50%;left:50%;width:46%;height:22%;background:#38bdf8;transform-origin:0 50%;transform:rotate(-58deg);clip-path:polygon(0 50%,100% 0,100% 100%);}
+  .pad span{position:relative;background:rgba(21,128,61,.85);border-radius:999px;padding:0 6px;min-width:1.8em;text-align:center;}
+  .pad.hid span{background:#fff;color:#16a34a;text-shadow:none;}
+  .pad.next{animation:pad-pulse 1.1s ease-in-out infinite;}
+  .pad.next span{outline:3px solid var(--pink);}
+  @keyframes pad-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+  .frog{position:absolute;left:0;top:0;z-index:3;font-size:clamp(30px,8vw,42px);line-height:1;transform:translate(-50%,-78%);pointer-events:none;
+    filter:drop-shadow(0 3px 2px rgba(0,0,0,.25));}
+  .frog.happy{animation:frog-joy .6s ease 2;}
+  @keyframes frog-joy{50%{transform:translate(-50%,-120%) rotate(-12deg)}}
+  .hop{position:absolute;z-index:4;transform:translate(-50%,-50%);font-weight:800;font-size:clamp(16px,4vw,20px);color:#fff;
+    background:var(--purple);border-radius:999px;padding:0 8px;pointer-events:none;animation:hop-up 1s ease forwards;}
+  @keyframes hop-up{0%{opacity:0;transform:translate(-50%,-30%)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-160%)}}
+
+  /* ---------- 3. Grădina ---------- */
+  .gardens{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:12px;margin:8px auto;min-height:120px;}
+  .garden{display:inline-flex;flex-direction:column;gap:clamp(3px,1vw,6px);padding:10px 12px;border-radius:20px;
+    background:linear-gradient(180deg,#bbf7d0,#86efac);border:4px solid #65a30d;box-shadow:0 6px 0 #4d7c0f;
+    transition:transform .9s cubic-bezier(.5,0,.3,1);animation:pop .4s ease backwards;}
+  .garden.turn{transform:rotate(90deg);}
+  .garden.no-anim{transition:none;}
+  .grow{display:flex;justify-content:center;gap:clamp(1px,.8vw,5px);padding:2px 6px 4px;border-radius:999px;
+    background:linear-gradient(180deg,transparent 60%,#a16207 60%,#854d0e);}
+  .grow span{font-size:clamp(18px,5vw,28px);line-height:1;display:inline-block;animation:sway 2.6s ease-in-out infinite;transform-origin:50% 100%;}
+  .grow span:nth-child(2n){animation-delay:-1.3s;}
+  @keyframes sway{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+  .garden.small .grow span{font-size:clamp(15px,4vw,22px);}
+  .bed-cap{display:block;font-size:13px;font-weight:700;color:#3f6212;margin-top:2px;}
+
+  /* ---------- 4. Racheta ---------- */
+  .launch{position:relative;height:clamp(200px,48vw,250px);max-width:520px;margin:4px auto 0;border-radius:22px;overflow:hidden;
+    background:radial-gradient(circle at 15% 20%,#fff 0 1.5px,transparent 2px),radial-gradient(circle at 70% 12%,#fff 0 1px,transparent 2px),
+      radial-gradient(circle at 42% 40%,#fde68a 0 1.5px,transparent 2px),radial-gradient(circle at 85% 45%,#fff 0 1px,transparent 2px),
+      linear-gradient(180deg,#1e1b4b,#4c1d95 55%,#7dd3fc);background-size:110px 90px,140px 120px,90px 110px,160px 100px,auto;}
+  .launch .moon{position:absolute;top:10px;left:14px;font-size:clamp(30px,8vw,40px);}
+  .launch .ground{position:absolute;left:0;right:0;bottom:0;height:16px;background:linear-gradient(180deg,#86efac,#16a34a);}
+  .rocket{position:absolute;left:44%;bottom:calc(14px + var(--lv,0) * 15%);z-index:2;font-size:clamp(46px,12vw,62px);line-height:1;
+    transform:translateX(-50%) rotate(-45deg);transition:bottom .7s cubic-bezier(.34,1.56,.64,1);}
+  .flame{position:absolute;left:44%;bottom:calc(14px + var(--lv,0) * 15% - 26px);z-index:1;transform:translateX(-50%);font-size:clamp(24px,6vw,32px);
+    opacity:0;transition:bottom .7s cubic-bezier(.34,1.56,.64,1),opacity .3s;}
+  .launch.up .flame{opacity:1;animation:flick .15s ease-in-out infinite alternate;}
+  @keyframes flick{from{transform:translateX(-50%) scale(.9)}to{transform:translateX(-50%) scale(1.15)}}
+  .launch.go .rocket,.launch.go .flame{transition:none;animation:blastoff 1.8s ease-in forwards;}
+  @keyframes blastoff{0%{translate:0 0}15%{translate:-3px 4px}25%{translate:3px 0}100%{translate:0 -420px}}
+  .fuel{position:absolute;right:14px;top:14px;bottom:24px;width:24px;display:flex;flex-direction:column-reverse;gap:4px;
+    padding:3px;border:3px solid #fff;border-radius:12px;background:rgba(255,255,255,.18);}
+  .fuel i{flex:1;border-radius:6px;background:rgba(255,255,255,.18);transition:background .3s;}
+  .fuel i.on{background:linear-gradient(180deg,#fde047,#f97316);animation:pop .3s ease;}
+  .qline{font-size:clamp(17px,4vw,21px);font-weight:700;color:#5b4d80;margin:6px 0 0;}
+
+  /* ---------- 5. Acvariul ---------- */
+  .bucket{display:inline-flex;align-items:center;gap:10px;margin:2px auto 0;padding:6px 18px;border-radius:20px;background:#fff7d6;border:3px solid #fbbf24;}
+  .bucket .big{font-size:clamp(34px,9vw,46px);font-weight:800;color:#db2777;}
+  .bucket.got{animation:jump .7s ease;}
+  .aquarium{position:relative;max-width:680px;margin:10px auto 0;padding:18px 8px 44px;border-radius:24px;overflow:hidden;
+    display:flex;flex-wrap:wrap;justify-content:center;gap:16px 10px;
+    background:linear-gradient(180deg,#a5f3fc,#38bdf8 55%,#0369a1);}
+  .aquarium .weed{position:absolute;bottom:-4px;font-size:clamp(28px,7vw,40px);transform-origin:50% 100%;animation:sway 3s ease-in-out infinite;pointer-events:none;}
+  .aquarium .sand{position:absolute;left:0;right:0;bottom:0;height:20px;background:linear-gradient(180deg,#fde68a,#f59e0b);}
+  .bub{position:absolute;bottom:10px;width:10px;height:10px;border-radius:50%;border:2px solid rgba(255,255,255,.8);animation:bub-up 4s linear infinite;pointer-events:none;}
+  @keyframes bub-up{0%{transform:translateY(0);opacity:0}10%{opacity:1}100%{transform:translateY(-320px);opacity:0}}
+  .fish{position:relative;z-index:1;width:min(180px,calc(50% - 6px));height:clamp(64px,17vw,76px);border:0;background:none;padding:0;
+    animation:fishswim 4s ease-in-out infinite;}
+  .fish .fb{position:absolute;left:0;top:0;bottom:0;right:20%;border-radius:55% 45% 45% 55%/55% 50% 50% 45%;
+    background:radial-gradient(circle at 28% 28%,rgba(255,255,255,.6),rgba(255,255,255,0) 30%),var(--fc);
+    box-shadow:inset -6px -8px 0 rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;padding:0 2px 0 18px;
+    color:#fff;font-weight:800;font-size:clamp(15px,4.1vw,20px);white-space:nowrap;text-shadow:0 2px 0 rgba(0,0,0,.25);}
+  .fish .ft{position:absolute;right:0;top:10%;bottom:10%;width:28%;background:var(--fc);filter:brightness(.85);
+    clip-path:polygon(0 50%,100% 0,80% 50%,100% 100%);}
+  .fish .fn{position:absolute;left:34%;top:-9px;width:26%;height:14px;background:var(--fc);filter:brightness(.85);clip-path:polygon(0 100%,40% 0,100% 100%);}
+  .fish .fe{position:absolute;left:9px;top:28%;width:10px;height:10px;border-radius:50%;background:#1e1b4b;box-shadow:0 0 0 3px #fff;}
+  .fish:hover .fb{filter:brightness(1.08);}
+  @keyframes fishswim{0%,100%{transform:translate(4px,0) rotate(-2deg)}25%{transform:translate(-3px,-6px)}50%{transform:translate(-8px,0) rotate(2deg)}75%{transform:translate(-2px,6px)}}
+  .fish.bad{animation:shake-x .4s ease;filter:grayscale(1);opacity:.45;cursor:default;}
+  .fish.caught{animation:caught .45s ease-in forwards;}
+  @keyframes caught{to{transform:translateY(-80px) scale(.3);opacity:0}}
+  .f-tag{width:min(180px,calc(50% - 6px));height:clamp(64px,17vw,76px);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:#ecfdf5;border:3px solid var(--green);border-radius:18px;font-weight:800;font-size:clamp(14px,3.6vw,17px);color:#065f46;animation:pop .35s ease;}
+
+  @media(max-width:520px){
+    .games{gap:5px;}
+    .game-btn{padding:8px 2px;font-size:clamp(9px,2.6vw,12px);overflow-wrap:anywhere;}
+    .pond{gap:46px 6px;padding:54px 6px 16px;}
+  }
+  @media(max-width:400px){
+    header{flex-wrap:wrap;}
+    .top-actions{margin-left:auto;}
+    .game-btn{min-height:70px;}
+    .ans,.tile{min-width:60px;padding:8px 10px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a href="rebe.html">← Jocurile lui Rebe</a>
+    <h1>🌸 Rebe înmulțește</h1>
+    <div class="top-actions">
+      <div class="stars" aria-label="Stele câștigate">⭐ <span id="starCount">0</span></div>
+      <button class="mute-btn" id="muteBtn" type="button" aria-label="Oprește sunetul">🔊</button>
+    </div>
+  </header>
+  <div class="stations" id="stations">
+    <div class="rebe" id="rebe" aria-hidden="true">
+      <div class="rebe-inner">
+        <img class="rebe-head" alt="" src="rebe-head.png">
+        <svg class="rebe-body" viewBox="17 44 66 84" xmlns="http://www.w3.org/2000/svg">
+          <rect x="41" y="104" width="7" height="16" rx="3" fill="#ffd9b3"/>
+          <rect x="52" y="104" width="7" height="16" rx="3" fill="#ffd9b3"/>
+          <ellipse cx="44" cy="122" rx="8" ry="5" fill="#e11d6b"/>
+          <ellipse cx="56" cy="122" rx="8" ry="5" fill="#e11d6b"/>
+          <rect x="45" y="49" width="10" height="13" rx="4" fill="#f0b892"/>
+          <polygon points="41,58 59,58 72,108 28,108" fill="#ff5ea8"/>
+          <polygon points="41,58 59,58 62,74 38,74" fill="#ff86c0"/>
+          <circle cx="42" cy="88" r="2.4" fill="#fff"/>
+          <circle cx="55" cy="82" r="2.4" fill="#fff"/>
+          <circle cx="50" cy="98" r="2.4" fill="#fff"/>
+          <circle cx="60" cy="97" r="2.4" fill="#fff"/>
+          <line x1="42" y1="64" x2="27" y2="84" stroke="#ffd9b3" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="26" cy="85" r="4.5" fill="#ffd9b3"/>
+          <g class="arm-wave">
+            <line x1="58" y1="64" x2="76" y2="50" stroke="#ffd9b3" stroke-width="7" stroke-linecap="round"/>
+            <circle cx="77" cy="49" r="4.5" fill="#ffd9b3"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+  <nav class="games" aria-label="Alege jocul">
+    <button class="game-btn" data-game="basket" type="button"><span class="icon">🧺</span>Coșulețele</button>
+    <button class="game-btn" data-game="frog" type="button"><span class="icon">🐸</span>Broscuța</button>
+    <button class="game-btn" data-game="garden" type="button"><span class="icon">🌷</span>Grădina</button>
+    <button class="game-btn" data-game="rocket" type="button"><span class="icon">🚀</span>Racheta</button>
+    <button class="game-btn" data-game="fish" type="button"><span class="icon">🐠</span>Acvariul</button>
+  </nav>
+  </div>
+  <div class="speech" id="speech" role="status" aria-live="polite">Bună! Sunt Rebe. Azi învățăm ÎNMULȚIREA! ✖️</div>
+  <div class="levelbar" aria-label="Alege nivelul">
+    <strong>Nivel:</strong>
+    <button class="lvl" data-level="1" type="button">1</button>
+    <button class="lvl" data-level="2" type="button">2</button>
+    <button class="lvl" data-level="3" type="button">3</button>
+    <button class="lvl" data-level="4" type="button">4</button>
+    <button class="lvl" data-level="5" type="button">5</button>
+    <p class="level-note" id="levelNote"></p>
+  </div>
+  <main class="panel">
+    <h2 id="panelTitle"></h2>
+    <div class="question" id="question"></div>
+    <div id="visual"></div>
+    <div id="activity"></div>
+    <div class="controls">
+      <button class="hint-btn" id="hintBtn" type="button" aria-expanded="false">💡 Indiciu</button>
+      <button class="again" id="againBtn" type="button">🔄 Altă întrebare</button>
+    </div>
+    <div class="hint-box" id="hintBox" hidden></div>
+  </main>
+  <footer>Făcut cu drag pentru Rebe 💖</footer>
+</div>
+<div class="confetti-layer" id="confetti" aria-hidden="true"></div>
+<div class="swim-layer" id="swimLayer" aria-hidden="true">
+  <div class="swim-water"></div>
+  <div class="swim-wave"></div>
+  <div class="swimmer">
+    <svg class="swim-svg" viewBox="0 0 200 112" xmlns="http://www.w3.org/2000/svg">
+      <circle class="swim-bubble" cx="34" cy="40" r="4" style="animation-delay:-.2s"/>
+      <circle class="swim-bubble" cx="22" cy="62" r="3" style="animation-delay:-.7s"/>
+      <circle class="swim-bubble" cx="40" cy="74" r="5" style="animation-delay:-1s"/>
+      <g class="swim-leg-a"><line x1="55" y1="62" x2="16" y2="52" stroke="#ffd9b3" stroke-width="9" stroke-linecap="round"/><ellipse cx="13" cy="51" rx="6" ry="4" fill="#e11d6b"/></g>
+      <g class="swim-leg-b" opacity=".9"><line x1="55" y1="70" x2="16" y2="82" stroke="#f0b892" stroke-width="8" stroke-linecap="round"/><ellipse cx="13" cy="83" rx="6" ry="4" fill="#e11d6b"/></g>
+      <g class="swim-arm-b" opacity=".8"><line x1="145" y1="60" x2="170" y2="34" stroke="#f0b892" stroke-width="8" stroke-linecap="round"/><circle cx="171" cy="32" r="5" fill="#f0b892"/></g>
+      <rect x="45" y="50" width="106" height="28" rx="14" fill="#ff5ea8"/>
+      <rect x="72" y="53" width="52" height="9" rx="4" fill="#ff86c0"/>
+      <g class="swim-arm-f"><line x1="145" y1="58" x2="172" y2="86" stroke="#ffd9b3" stroke-width="8" stroke-linecap="round"/><circle cx="173" cy="88" r="5" fill="#ffd9b3"/></g>
+    </svg>
+    <img class="swim-head" src="rebe-head.png" alt="">
+  </div>
+</div>
+<script src="rebe-bonus.js"></script>
+<script>
+(function(){
+  'use strict';
+  var title=document.getElementById('panelTitle');
+  var question=document.getElementById('question');
+  var visual=document.getElementById('visual');
+  var activity=document.getElementById('activity');
+  var speech=document.getElementById('speech');
+  var hintBox=document.getElementById('hintBox');
+  var hintBtn=document.getElementById('hintBtn');
+  var starCount=document.getElementById('starCount');
+  var swimLayer=document.getElementById('swimLayer');
+  var rebe=document.getElementById('rebe');
+  var stations=document.getElementById('stations');
+  var confettiLayer=document.getElementById('confetti');
+  var muteBtn=document.getElementById('muteBtn');
+  var levelNote=document.getElementById('levelNote');
+  var gameButtons=Array.from(document.querySelectorAll('.game-btn'));
+  var levelButtons=Array.from(document.querySelectorAll('.lvl'));
+  var CONFETTI_COLORS=['#ff5ea8','#8b5cf6','#38bdf8','#34d399','#fbbf24','#fb923c','#f472b6'];
+  var MUL='·'; // semnul înmulțirii din programa școlară
+  var level=Number(localStorage.getItem('rebe7_level'))||1;
+  if(level<1 || level>5 || !Number.isInteger(level)) level=1;
+  var stars=Number(localStorage.getItem('rebe_stars'))||0;
+  var SWIM_EVERY=10; // înoată Rebe când stelele ajung la un multiplu de 10
+  var muted=localStorage.getItem('rebe_muted')==='1';
+  var game='basket';
+  var locked=false;
+  var nextTimer=null;
+  var audio=null;
+  var keyHandler=null;
+  var layoutHook=null; // repoziționări la redimensionare (ex. broscuța)
+  var lastFact='';
+
+  var names={basket:'🧺 Coșulețele cu fructe',frog:'🐸 Broscuța pe nuferi',garden:'🌷 Grădina lui Rebe',rocket:'🚀 Racheta tablei înmulțirii',fish:'🐠 Acvariul cu produse'};
+  var intros={
+    basket:'Câte fructe sunt în toate coșulețele? Adunăm sau… înmulțim! 🧺',
+    frog:'Broscuța sare mereu la fel de mult. Ajut-o să afle pe ce nufăr ajunge! 🐸',
+    garden:'Grădina are rânduri cu flori. Hai să le numărăm repede, cu înmulțirea! 🌷',
+    rocket:'Fiecare răspuns corect pune combustibil în rachetă. 4 răspunsuri și decolăm! 🚀',
+    fish:'Prinde doar peștii care au rezultatul de pe găletușă! 🐠'
+  };
+  var hints={
+    basket:'Numără câte fructe sunt într-un coșuleț. Adunăm acest număr de atâtea ori câte coșulețe sunt. Adunarea repetată de termeni egali se scrie mai scurt ca înmulțire: 4 + 4 + 4 = 3 · 4 („de 3 ori câte 4”).',
+    frog:'Broscuța sare de fiecare dată la fel de mult, deci adunăm mereu același număr: 0, 3, 6, 9… Așa numărăm din 3 în 3! Numărul de sărituri · lungimea unei sărituri = nufărul unde ajunge.',
+    garden:'Numără rândurile și câte flori sunt pe un rând. Dacă întoarcem grădina, rândurile se schimbă, dar florile sunt tot atâtea: 3 · 5 = 5 · 3.',
+    rocket:'Folosește tabla înmulțirii. Dacă nu-ți amintești, numără din 2 în 2, din 3 în 3… de câte ori spune primul factor.',
+    fish:'Calculează ce scrie pe fiecare pește și compară cu numărul de pe găletușă. Atenție: „+” înseamnă adunare, „·” înseamnă înmulțire!'
+  };
+  var hints5={
+    basket:'Întâi aflăm câte fructe sunt în coșulețe (înmulțire), apoi adunăm sau scădem fructele din problemă.',
+    garden:'Întâi aflăm câte flori sunt într-un strat. Apoi înmulțim cu numărul de straturi la fel.',
+    rocket:'La trei factori înmulțim pe rând: 2 · 3 · 4 → 2 · 3 = 6, apoi 6 · 4 = 24.',
+    fish:'La trei factori înmulțim pe rând, de la stânga la dreapta.'
+  };
+  var RULES=[
+    '➕ Adunarea repetată de termeni egali se scrie ca înmulțire: 5 + 5 + 5 = 3 · 5.',
+    '🔤 În 3 · 5 = 15, numerele 3 și 5 sunt factorii, iar 15 este produsul.',
+    '🔄 Dacă schimbăm factorii între ei, produsul nu se schimbă: 3 · 5 = 5 · 3.',
+    '1️⃣ Un număr înmulțit cu 1 rămâne același: 7 · 1 = 7.',
+    '0️⃣ Orice număr înmulțit cu 0 dă 0: 7 · 0 = 0.'
+  ];
+  var LEVEL_NOTES=['','Înmulțirea ca adunare repetată · tabla cu 2, 5 și 10 (ex. 3 · 5)',
+    'Tabla cu 3 și 4 · înmulțirea cu 1 și cu 0 (ex. 4 · 3, 7 · 1, 6 · 0)',
+    'Tabla cu 6, 7, 8 și 9 (ex. 4 · 7)',
+    'Toată tabla înmulțirii, până la 100 · schimbăm factorii între ei (ex. 6 · 9 = 9 · 6)',
+    'Provocare: trei factori și probleme cu două operații (ex. 2 · 3 · 4, 3 · 6 + 5)'];
+  var TABLES=[null,[2,5,10],[3,4],[6,7,8,9],[2,3,4,5,6,7,8,9,10],[2,3,4,5,6,7,8,9,10]];
+  var PRAISE=['Bravo! Ai câștigat o stea! ⭐','Super! Încă o stea! 🌟','Excelent! Știi să înmulțești! ✖️⭐','Ești grozavă! 💖⭐','Ce socoteală frumoasă! 🎉'];
+  var FRUITS=[{e:'🍎',n:'mere',a:'merele'},{e:'🍓',n:'căpșuni',a:'căpșunile'},{e:'🍐',n:'pere',a:'perele'},{e:'🍊',n:'portocale',a:'portocalele'},
+    {e:'🥕',n:'morcovi',a:'morcovii'},{e:'🍒',n:'cireșe',a:'cireșele'},{e:'🍋',n:'lămâi',a:'lămâile'},{e:'🍪',n:'biscuiți',a:'biscuiții'},
+    {e:'🧁',n:'brioșe',a:'brioșele'},{e:'🌰',n:'castane',a:'castanele'},{e:'🍑',n:'piersici',a:'piersicile'},{e:'🥚',n:'ouă',a:'ouăle'}];
+  var FLOWERS=['🌷','🌻','🌼','🌸','🌹','🪻'];
+  var FISH_COLORS=['#f97316','#ec4899','#8b5cf6','#0ea5e9','#22c55e','#eab308','#f43f5e'];
+
+  // ---------- Utile ----------
+  function rand(lo,hi){return lo+Math.floor(Math.random()*(hi-lo+1));}
+  function choice(a){return a[rand(0,a.length-1)];}
+  function shuffle(items){
+    for(var i=items.length-1;i>0;i--){var j=rand(0,i);var t=items[i];items[i]=items[j];items[j]=t;}
+    return items;
+  }
+  function el(tag,cls,text){
+    var n=document.createElement(tag);
+    if(cls) n.className=cls;
+    if(text!=null) n.textContent=text;
+    return n;
+  }
+  function btn(cls,text,onClick){
+    var b=el('button',cls,text);
+    b.type='button';
+    b.addEventListener('click',onClick);
+    return b;
+  }
+  function mul(a,b){return a+' '+MUL+' '+b;}
+  function rep(n,times){var a=[];for(var i=0;i<times;i++) a.push(n);return a.join(' + ');}
+  function skip(n,count){var a=[];for(var i=1;i<=count;i++) a.push(n*i);return a;}
+
+  // ---------- Generator: „de a ori câte b” ----------
+  function fact(o){
+    o=o||{};
+    var lo=o.lo||2, hi=o.hi||10, f;
+    for(var tries=0;tries<40;tries++){
+      if(o.special && (level===2 || level===4) && rand(0,9)<(level===2?3:2)){
+        var n=rand(2,10), z=rand(0,2)?1:0;
+        f=rand(0,1)?{a:n,b:z}:{a:z,b:n};
+      } else {
+        var pool=TABLES[level];
+        if(level===2 && rand(0,9)<2) pool=[2,5,10]; // recapitulăm puțin
+        f={a:rand(lo,hi),b:choice(pool)};
+        if(o.swap && rand(0,1)) f={a:f.b,b:f.a};
+      }
+      if(f.a*f.b<=(o.max||100) && mul(f.a,f.b)!==lastFact) break;
+    }
+    lastFact=mul(f.a,f.b);
+    return f;
+  }
+  function mulHelp(a,b,v){
+    var p=a*b;
+    if(a===0 || b===0) return v+' nu e corect. Orice număr înmulțit cu 0 dă 0! 0️⃣';
+    if(a===1 || b===1) return v+' nu e corect. Când înmulțim cu 1, obținem chiar celălalt număr! 1️⃣';
+    if(v===a+b && v!==p) return 'Atenție: '+a+' + '+b+' = '+v+'. Noi înmulțim, nu adunăm! ✖️';
+    var start=skip(b,Math.min(2,a-1));
+    return v+' nu e corect. Numără din '+b+' în '+b+', de '+a+' ori: '+start.join(', ')+', … 🧮';
+  }
+  function numberOptions(v,count,minV){
+    var set=[v];
+    shuffle([1,-1,2,-2,10,-10,3,-3,5,-5]).forEach(function(d){
+      var c=v+d;
+      if(set.length<(count||4) && c>=(minV||0) && c<=100 && set.indexOf(c)<0) set.push(c);
+    });
+    return shuffle(set);
+  }
+
+  // ---------- Egalități colorate ----------
+  function term(it){
+    var n=el('span','n'+(it.k?' k'+it.k:''));
+    n.appendChild(it.v instanceof Node?it.v:el('span','v',String(it.v)));
+    if(it.l) n.appendChild(el('span','l',it.l));
+    return n;
+  }
+  function eqEl(items,cls){
+    var row=el('div','eq'+(cls?' '+cls:''));
+    items.forEach(function(it){
+      row.appendChild(typeof it==='string'?el('span','o',it):term(it));
+    });
+    return row;
+  }
+  // a · b = ?  (cu denumirile factor / produs)
+  function mulEq(a,b,slot,labels,cls){
+    return eqEl([{v:a,k:'f',l:labels?'factor':null},MUL,{v:b,k:'g',l:labels?'factor':null},'=',{v:slot,k:'p',l:labels?'produs':null}],cls);
+  }
+  function slotEl(){return el('span','v slot','?');}
+
+  // ---------- Sunet ----------
+  function tone(freq,dur,type,vol,delay){
+    if(muted) return;
+    var AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC) return;
+    if(!audio) audio=new AC();
+    if(audio.state==='suspended') audio.resume();
+    var t0=audio.currentTime+(delay||0);
+    var o=audio.createOscillator(), g=audio.createGain();
+    o.type=type||'sine';
+    o.frequency.value=freq;
+    o.connect(g);g.connect(audio.destination);
+    g.gain.setValueAtTime(vol||0.15,t0);
+    g.gain.exponentialRampToValueAtTime(0.001,t0+dur);
+    o.start(t0);o.stop(t0+dur+0.01);
+  }
+  function beep(correct){tone(correct?660:280,0.2);}
+  function tick(){tone(560,0.07,'triangle',0.08);}
+  function boing(){tone(330,0.08,'sine',0.12);tone(520,0.12,'sine',0.12,0.07);}
+  function popSound(){tone(1200,0.05,'square',0.05);tone(300,0.12,'triangle',0.12,0.03);}
+  function whoosh(){[220,260,320,400,500].forEach(function(f,i){tone(f,0.12,'sawtooth',0.04,i*0.06);});}
+  function fanfare(){[523,659,784,1047].forEach(function(f,i){tone(f,0.18,'triangle',0.12,i*0.11);});}
+
+  // ---------- Rebe ----------
+  function say(text){
+    speech.textContent=text;
+    speech.style.animation='none';
+    void speech.offsetWidth;
+    speech.style.animation='';
+  }
+  function rebeState(cls,ms){
+    rebe.classList.remove('happy','oops');
+    void rebe.offsetWidth;
+    rebe.classList.add(cls);
+    setTimeout(function(){rebe.classList.remove(cls);},ms);
+  }
+  function activeButton(){return gameButtons.find(function(b){return b.dataset.game===game;});}
+  function moveRebeTo(button,animate){
+    if(!button) return;
+    var sRect=stations.getBoundingClientRect();
+    var bRect=button.getBoundingClientRect();
+    var left=bRect.left-sRect.left+bRect.width/2-rebe.offsetWidth/2;
+    if(animate){
+      rebe.classList.add('walking');
+      rebe.style.left=left+'px';
+      setTimeout(function(){rebe.classList.remove('walking');},1000);
+    } else {
+      rebe.classList.add('no-anim');
+      rebe.style.left=left+'px';
+      void rebe.offsetWidth;
+      rebe.classList.remove('no-anim');
+    }
+  }
+  function repositionRebe(){moveRebeTo(activeButton(),false);if(layoutHook) layoutHook();}
+
+  // ---------- Recompense ----------
+  function confetti(){
+    for(var i=0;i<22;i++){
+      var p=document.createElement('div');
+      p.className='confetti-piece';
+      p.style.left=Math.random()*100+'vw';
+      p.style.background=choice(CONFETTI_COLORS);
+      var dur=1.1+Math.random()*0.9;
+      p.style.animationDuration=dur+'s';
+      p.style.animationDelay=(Math.random()*0.25)+'s';
+      confettiLayer.appendChild(p);
+      (function(node,ms){setTimeout(function(){if(node.parentNode) node.parentNode.removeChild(node);},ms);})(p,(dur+0.3)*1000);
+    }
+  }
+  function swim(){
+    var swimmer=swimLayer.querySelector('.swimmer');
+    swimmer.style.animation='none';
+    void swimmer.offsetWidth;
+    swimmer.style.animation='';
+    swimLayer.classList.add('on');
+    say('Bravo! Rebe înoată puțin! 🏊‍♀️🌊🎉');
+    clearTimeout(swim._t);
+    swim._t=setTimeout(function(){swimLayer.classList.remove('on');},10000);
+    setTimeout(function(){if(window.RebeBonus) RebeBonus.show(applyBonus);},10000);
+  }
+  function applyBonus(delta){
+    stars=Math.max(0,stars+delta);
+    localStorage.setItem('rebe_stars',String(stars));
+    starCount.textContent=stars;
+    return stars;
+  }
+  function win(resultText,delay){
+    locked=true;
+    keyHandler=null;
+    if(resultText) activity.appendChild(el('div','result-line',resultText));
+    stars++;
+    localStorage.setItem('rebe_stars',String(stars));
+    starCount.textContent=stars;
+    if(stars % SWIM_EVERY === 0) swim();
+    else say(choice(PRAISE));
+    beep(true);
+    confetti();
+    rebeState('happy',700);
+    nextTimer=setTimeout(newRound,delay||3400);
+  }
+  function fail(msg){
+    say(msg||'Mai încearcă! Poți folosi indiciul. 💪');
+    beep(false);
+    rebeState('oops',500);
+  }
+  function step(text){
+    var all=activity.querySelectorAll('.step'), prev=all[all.length-1];
+    if(prev) prev.classList.add('done');
+    var s=el('div','step');
+    s.appendChild(el('h3',null,text));
+    activity.appendChild(s);
+    return s;
+  }
+  // rând de variante (fără etichete duplicate); onRight(item) se apelează la alegerea corectă
+  function choices(container,items,onRight,wide){
+    var seen={}, list=[];
+    items.forEach(function(it){if(!seen[it.label]){seen[it.label]=1;list.push(it);}});
+    var row=el('div','answers');
+    shuffle(list).forEach(function(it){
+      var b=btn('ans'+(wide?' wide':''),it.label,function(){
+        if(locked || b.disabled) return;
+        if(it.ok){
+          b.classList.add('correct');
+          row.querySelectorAll('button').forEach(function(x){x.disabled=true;});
+          tick();
+          onRight(it);
+        } else {
+          b.classList.add('wrong');
+          b.disabled=true;
+          fail(it.why);
+        }
+      });
+      row.appendChild(b);
+    });
+    container.appendChild(row);
+    return row;
+  }
+  // tastatură pentru un număr; cifrele apar în „slot”
+  function numPad(container,slot,expected,onRight,wrongMsg){
+    var typed='', done=false;
+    var pad=el('div','numpad');
+    function render(){
+      slot.textContent=typed||'?';
+      slot.classList.toggle('typing',!!typed);
+    }
+    function press(k){
+      if(locked || done) return;
+      if(k==='del'){typed=typed.slice(0,-1);render();return;}
+      if(k==='ok'){
+        if(!typed){say('Scrie întâi rezultatul cu tastele! 🔢');return;}
+        var v=Number(typed);
+        if(v===expected){
+          done=true;
+          keyHandler=null;
+          slot.classList.remove('typing');
+          slot.classList.add('ok');
+          pad.classList.add('off');
+          tick();
+          onRight();
+        } else {
+          fail(wrongMsg(v));
+          slot.classList.remove('bad');void slot.offsetWidth;slot.classList.add('bad');
+          typed='';render();
+        }
+        return;
+      }
+      if(typed.length>=3) return;
+      typed=(typed==='0'?'':typed)+k;
+      tick();
+      render();
+    }
+    ['1','2','3','4','5','6','7','8','9','del','0','ok'].forEach(function(k){
+      var label=k==='del'?'⌫':k==='ok'?'✔':k;
+      var b=btn('key'+(k==='ok'?' ok':k==='del'?' del':''),label,function(){press(k);});
+      if(k==='del') b.setAttribute('aria-label','Șterge');
+      if(k==='ok') b.setAttribute('aria-label','Gata');
+      pad.appendChild(b);
+    });
+    container.appendChild(pad);
+    keyHandler=function(e){
+      if(/^[0-9]$/.test(e.key)) press(e.key);
+      else if(e.key==='Backspace'){e.preventDefault();press('del');}
+      else if(e.key==='Enter'){e.preventDefault();press('ok');}
+    };
+    render();
+  }
+  // variante de înmulțire pentru „de a ori câte b”
+  function mulOptions(a,b,why){
+    var items=[{label:mul(a,b),ok:true}];
+    items.push({label:a+' + '+b,ok:false,why:'Cu „+” am aduna doar '+a+' și '+b+'. Pentru termeni egali repetați folosim înmulțirea „·”.'});
+    if(a!==b) items.push({label:mul(b,b),ok:false,why:why.count});
+    items.push({label:mul(a+1,b),ok:false,why:why.count});
+    if(b<10) items.push({label:mul(a,b+1),ok:false,why:why.size});
+    return items;
+  }
+
+  // ---------- 1. Coșulețele ----------
+  function basketRound(){
+    var fr=choice(FRUITS), P5=level===5, f, k, n, extra=null;
+    if(P5){
+      f=fact({lo:2,hi:5,max:60});
+      var plus=rand(0,1)===1;
+      extra=plus?{op:'+',e:rand(2,Math.min(9,100-f.a*f.b))}:{op:'−',e:rand(1,Math.min(9,f.a*f.b-1))};
+    } else f=fact({lo:2,hi:level>=4?6:5});
+    k=f.a;n=f.b;
+    var P=k*n;
+    var row=el('div','baskets');
+    var cols=n<=3?n:n===4?2:n<=6?3:n===9?3:n<=8?4:5;
+    var baskets=[];
+    for(var i=0;i<k;i++){
+      var bk=el('div','bk');
+      bk.style.animationDelay=(i*0.08)+'s';
+      var b=el('div','basket');
+      b.style.gridTemplateColumns='repeat('+cols+',auto)';
+      for(var j=0;j<n;j++) b.appendChild(el('span',null,fr.e));
+      bk.appendChild(b);
+      row.appendChild(bk);
+      baskets.push(bk);
+    }
+    if(extra && extra.op==='+'){
+      var loose=el('div','loose');
+      loose.style.animationDelay=(k*0.08)+'s';
+      var plate=el('div','plate');
+      for(var q=0;q<extra.e;q++) plate.appendChild(el('span',null,fr.e));
+      loose.appendChild(plate);
+      loose.appendChild(el('small',null,'pe masă'));
+      row.appendChild(loose);
+    }
+    visual.appendChild(row);
+    function showCounts(){
+      baskets.forEach(function(bk,i){
+        var c=el('span','bcount'+(i>0?' plus':''),String(n));
+        c.style.animationDelay=(i*0.12)+'s';
+        bk.appendChild(c);
+      });
+    }
+    var whyMul={count:'Numără coșulețele: sunt '+k+'. 🧺',size:'Numără câte '+fr.n+' sunt într-un coșuleț. 🧺'};
+
+    if(!P5){
+      question.textContent='Câte '+fr.n+' sunt în toate coșulețele? '+fr.e;
+      var s1=step('Pasul 1: Scrie ca adunare de termeni egali!');
+      var o1=[{label:rep(n,k),ok:true},
+        {label:rep(n,k+1),ok:false,why:'Ai pus un coșuleț în plus! Sunt doar '+k+' coșulețe. 🧺'},
+        {label:n+' + '+k,ok:false,why:'Adunăm câte '+n+' pentru FIECARE coșuleț.'}];
+      if(k>=3) o1.push({label:rep(n,k-1),ok:false,why:'Ai uitat un coșuleț! Sunt '+k+' coșulețe. 🧺'});
+      if(n>1) o1.push({label:rep(n-1,k),ok:false,why:whyMul.size});
+      choices(s1,o1,function(){showCounts();step2();},true);
+      say('Fiecare coșuleț are la fel de multe '+fr.n+'. Scrie adunarea! ➕');
+    } else {
+      var story=el('p','story','În '+k+' coșulețe sunt câte '+n+' '+fr.n+'. '+
+        (extra.op==='+'?'Pe masă mai sunt '+extra.e+' '+fr.n+'. Câte '+fr.n+' sunt în total?':
+          'Rebe le dă prietenilor '+extra.e+' '+fr.n+'. Câte '+fr.n+' au rămas?'));
+      question.appendChild(story);
+      step2();
+      say('Problemă cu două operații! Întâi înmulțirea, apoi '+(extra.op==='+'?'adunarea':'scăderea')+'. 🧩');
+    }
+    function step2(){
+      var s2=step(P5?'Pasul 1: Câte '+fr.n+' sunt în coșulețe? Alege înmulțirea!':
+        'Pasul 2: Adunarea are '+k+' termeni egali. Scrie-o ca înmulțire!');
+      choices(s2,mulOptions(k,n,whyMul),step3,true);
+      if(!P5) say('Bravo! Acum scrie mai scurt: „de '+k+' ori câte '+n+'”. ✖️');
+    }
+    function step3(){
+      var s3=step((P5?'Pasul 2':'Pasul 3')+': Calculează produsul!');
+      var slot=slotEl();
+      s3.appendChild(mulEq(k,n,slot,true));
+      numPad(s3,slot,P,function(){
+        if(!P5){
+          fanfare();
+          win(rep(n,k)+' = '+mul(k,n)+' = '+P+' '+fr.e,3600);
+        } else step4();
+      },function(v){return mulHelp(k,n,v);});
+      say('Câte '+fr.n+' sunt? Scrie produsul cu tastele! 🔢');
+    }
+    function step4(){
+      var R=extra.op==='+'?P+extra.e:P-extra.e;
+      if(extra.op==='−'){
+        var items=row.querySelectorAll('.basket span');
+        for(var i=0;i<extra.e;i++) items[items.length-1-i].classList.add('gone');
+      }
+      var s4=step('Pasul 3: '+(extra.op==='+'?'Adună și '+fr.a+' de pe masă!':'Scade ce le-a dat Rebe prietenilor! '+fr.e));
+      var slot=slotEl();
+      s4.appendChild(eqEl([{v:P,k:'p'},extra.op,{v:extra.e},'=',{v:slot}]));
+      numPad(s4,slot,R,function(){
+        fanfare();
+        win(mul(k,n)+' '+extra.op+' '+extra.e+' = '+P+' '+extra.op+' '+extra.e+' = '+R+' '+fr.e,3800);
+      },function(v){return v+' nu e corect. Socotește '+P+' '+extra.op+' '+extra.e+' cu atenție! 🧮';});
+      say('Super! Acum a doua operație: '+P+' '+extra.op+' '+extra.e+'. ✏️');
+    }
+  }
+
+  // ---------- 2. Broscuța pe nuferi ----------
+  function frogRound(){
+    var f=fact({lo:level>=4?4:2,hi:level>=4?7:(level===3?5:6)});
+    var k=f.a,n=f.b,P=k*n;
+    question.textContent='Broscuța sare din '+n+' în '+n+'. Pe ce nuferi ajunge?';
+    var pond=el('div','pond');
+    var pads=[];
+    var revealed={0:true};
+    if(level>=4){
+      var mids=[];
+      for(var r=1;r<k;r++) mids.push(r);
+      shuffle(mids).slice(0,Math.floor((k-1)/2)).forEach(function(i){revealed[i]=true;});
+    }
+    for(var i=0;i<=k;i++){
+      var p=el('div','pad'+(revealed[i]?'':' hid'));
+      p.appendChild(el('span',null,revealed[i]?String(i*n):'?'));
+      pond.appendChild(p);
+      pads.push(p);
+    }
+    var frog=el('div','frog','🐸');
+    pond.appendChild(frog);
+    visual.appendChild(pond);
+    var cur=0;
+    function padPos(i){
+      var p=pads[i];
+      return {x:p.offsetLeft+p.offsetWidth/2,y:p.offsetTop+p.offsetHeight*0.42};
+    }
+    function placeFrog(){var q=padPos(cur);frog.style.left=q.x+'px';frog.style.top=q.y+'px';}
+    layoutHook=placeFrog;
+    placeFrog();
+    var s1=step('Pe ce nufăr ajunge broscuța la următoarea săritură?');
+    var tiles=el('div','tiles');
+    s1.appendChild(tiles);
+    function jumpTo(i,done){
+      var a=padPos(cur), b=padPos(i);
+      var hop=el('span','hop','+'+n);
+      hop.style.left=(a.x+b.x)/2+'px';
+      hop.style.top=(Math.min(a.y,b.y)-30)+'px';
+      pond.appendChild(hop);
+      setTimeout(function(){hop.remove();},1000);
+      boing();
+      var lift=Math.min(a.y,b.y)-48;
+      if(frog.animate){
+        frog.animate([{left:a.x+'px',top:a.y+'px'},{left:(a.x+b.x)/2+'px',top:lift+'px',offset:.5},{left:b.x+'px',top:b.y+'px'}],
+          {duration:560,easing:'ease-in-out'});
+      }
+      cur=i;
+      placeFrog();
+      setTimeout(done,600);
+    }
+    function next(){
+      pads.forEach(function(p){p.classList.remove('next');});
+      tiles.replaceChildren();
+      if(cur>=k){finish();return;}
+      var i=cur+1, v=i*n;
+      if(revealed[i]){setTimeout(function(){jumpTo(i,next);},350);return;}
+      pads[i].classList.add('next');
+      var prev=cur*n;
+      var opts=[v];
+      shuffle([prev+1,v+1,v-1,v+2,v-2,v+n]).forEach(function(c){if(opts.length<4 && c>prev && opts.indexOf(c)<0) opts.push(c);});
+      shuffle(opts).forEach(function(c){
+        var t=btn('tile',String(c),function(){
+          if(locked || t.disabled) return;
+          if(c===v){
+            pads[i].classList.remove('hid','next');
+            pads[i].firstChild.textContent=String(v);
+            tiles.querySelectorAll('button').forEach(function(x){x.disabled=true;});
+            jumpTo(i,next);
+          } else {
+            t.classList.add('wrong');
+            t.disabled=true;
+            fail(c===prev+1?'Broscuța nu sare câte 1, ci câte '+n+'! '+prev+' + '+n+' = ? 🐸':
+              'Mai socotește: '+prev+' + '+n+' = ? 🐸');
+          }
+        });
+        tiles.appendChild(t);
+      });
+    }
+    function finish(){
+      frog.classList.add('happy');
+      var s2=step('Broscuța a făcut '+k+' sărituri de câte '+n+' și a ajuns la '+P+'. Ce înmulțire este?');
+      var items=mulOptions(k,n,{count:'Numără săriturile: sunt '+k+'. 🐸',size:'Fiecare săritură are '+n+'. 🐸'});
+      if(k>2) items.push({label:rep(n,2),ok:false,why:'Asta ar fi doar 2 sărituri! Broscuța a sărit de '+k+' ori.'});
+      choices(s2,items,function(){
+        fanfare();
+        win('de '+k+' ori câte '+n+': '+mul(k,n)+' = '+P+' 🐸',3600);
+      },true);
+      say('Hop-țop! Broscuța a ajuns la '+P+'! Scrie săriturile ca înmulțire. 🐸');
+    }
+    say('Broscuța sare câte '+n+'. Alege nufărul următor! 🐸');
+    setTimeout(next,0);
+  }
+
+  // ---------- 3. Grădina ----------
+  function gardenEl(rows,cols,flower,small){
+    var g=el('div','garden'+(small?' small':''));
+    for(var r=0;r<rows;r++){
+      var row=el('div','grow');
+      for(var c=0;c<cols;c++) row.appendChild(el('span',null,flower));
+      g.appendChild(row);
+    }
+    return g;
+  }
+  function gardenRound(){
+    var flower=choice(FLOWERS);
+    var wrap=el('div','gardens');
+    visual.appendChild(wrap);
+    if(level===5){
+      var beds,r,c;
+      for(var t=0;t<50;t++){
+        beds=rand(2,3);r=rand(2,4);c=rand(2,5);
+        if(beds*r*c<=60 && r!==c) break;
+      }
+      var one=r*c, P=beds*one;
+      question.textContent='Rebe are '+beds+' straturi de flori, la fel. Câte flori are în total? '+flower;
+      for(var i=0;i<beds;i++){
+        var box=el('div');
+        box.appendChild(gardenEl(r,c,flower,true));
+        box.appendChild(el('span','bed-cap','stratul '+(i+1)));
+        wrap.appendChild(box);
+      }
+      var s1=step('Pasul 1: Câte flori sunt într-un strat?');
+      var slot=slotEl();
+      s1.appendChild(mulEq(r,c,slot,false,'small'));
+      numPad(s1,slot,one,function(){
+        var s2=step('Pasul 2: Sunt '+beds+' straturi cu câte '+one+' flori. Câte flori sunt în total?');
+        var slot2=slotEl();
+        s2.appendChild(eqEl([{v:beds,k:'f'},MUL,{v:r,k:'g'},MUL,{v:c,k:'g'},'=',{v:beds,k:'f'},MUL,{v:one,k:'p'},'=',{v:slot2}],'small'));
+        numPad(s2,slot2,P,function(){
+          fanfare();
+          win(beds+' '+MUL+' '+r+' '+MUL+' '+c+' = '+P+' flori '+flower,3600);
+        },function(v){return mulHelp(beds,one,v);});
+        say('Acum înmulțim cu numărul de straturi: '+mul(beds,one)+'. 🌷');
+      },function(v){return mulHelp(r,c,v);});
+      say('Trei factori! Întâi aflăm câte flori sunt într-un strat. 🌷');
+      return;
+    }
+    var f=fact({lo:2,hi:5});
+    var rows=f.a, cols=f.b, P2=rows*cols;
+    if(rows===cols){rows=rows===2?3:rows-1;P2=rows*cols;}
+    question.textContent='Câte flori sunt în grădina lui Rebe? '+flower;
+    var g=gardenEl(rows,cols,flower);
+    wrap.appendChild(g);
+    var s1g=step('Pasul 1: Privește rândurile de flori. Ce înmulțire arată grădina?');
+    choices(s1g,mulOptions(rows,cols,{count:'Numără rândurile: sunt '+rows+'. 🌷',size:'Numără florile de pe un rând: sunt '+cols+'. 🌷'}),turn,true);
+    say('Câte rânduri sunt? Câte flori are fiecare rând? 🌷');
+    function turn(){
+      say('Rebe întoarce grădina! 🔄 Florile sunt tot acolo…');
+      g.classList.add('turn');
+      setTimeout(function(){
+        var g2=gardenEl(cols,rows,flower);
+        g2.style.animation='none';
+        g2.classList.add('no-anim');
+        g.replaceWith(g2);
+        g=g2;
+        step2();
+      },1000);
+    }
+    function step2(){
+      var s2=step('Pasul 2: Grădina s-a întors! Acum ce înmulțire vezi?');
+      choices(s2,mulOptions(cols,rows,{count:'Numără din nou rândurile: acum sunt '+cols+'. 🔄',size:'Numără florile de pe un rând: acum sunt '+rows+'. 🔄'}),step3,true);
+      say('Acum sunt '+cols+' rânduri. Ce înmulțire vezi? 🔄');
+    }
+    function step3(){
+      var s3=step('Pasul 3: Câte flori sunt în grădină?');
+      var slot=slotEl();
+      s3.appendChild(eqEl([{v:rows,k:'f'},MUL,{v:cols,k:'g'},'=',{v:cols,k:'g'},MUL,{v:rows,k:'f'},'=',{v:slot,k:'p'}],'small'));
+      numPad(s3,slot,P2,function(){
+        fanfare();
+        win(mul(rows,cols)+' = '+mul(cols,rows)+' = '+P2+' 🔄 Am schimbat factorii, produsul e același!',3800);
+      },function(v){return mulHelp(rows,cols,v);});
+      say('Oricum ne uităm, florile sunt tot atâtea! Calculează produsul. 🌷');
+    }
+  }
+
+  // ---------- 4. Racheta ----------
+  function rocketQuestion(){
+    if(level===5 && rand(0,9)<5){
+      var a,b,c;
+      for(var t=0;t<50;t++){a=rand(2,5);b=rand(2,5);c=rand(2,5);if(a*b*c<=100) break;}
+      return {kind:'three',a:a,b:b,c:c,r:a*b*c};
+    }
+    var f=fact({special:true,swap:true});
+    var kinds=['plain','labels','words','times'];
+    if(f.a>=2 && f.a<=5 && f.b>=2) kinds.push('repeat','repeat');
+    return {kind:choice(kinds),a:f.a,b:f.b,r:f.a*f.b};
+  }
+  function rocketRound(){
+    var TOTAL=4, done=0;
+    question.textContent='Răspunde corect și umple racheta cu combustibil!';
+    var launch=el('div','launch');
+    launch.appendChild(el('div','moon','🪐'));
+    launch.appendChild(el('div','ground'));
+    var flame=el('div','flame','🔥');
+    var rocket=el('div','rocket','🚀');
+    launch.appendChild(flame);launch.appendChild(rocket);
+    var fuel=el('div','fuel');
+    for(var i=0;i<TOTAL;i++) fuel.appendChild(el('i'));
+    launch.appendChild(fuel);
+    visual.appendChild(launch);
+    var counter=el('div','counter','Combustibil: 0 / '+TOTAL+' ⛽');
+    visual.appendChild(counter);
+    var box=el('div','step');
+    activity.appendChild(box);
+    function ask(){
+      var q=rocketQuestion();
+      box.replaceChildren();
+      box.style.animation='none';void box.offsetWidth;box.style.animation='';
+      box.appendChild(el('h3',null,'Întrebarea '+(done+1)+' din '+TOTAL));
+      var slot=slotEl(), expected=q.r, help;
+      if(q.kind==='three'){
+        box.appendChild(el('p','qline','Înmulțește pe rând cei trei factori:'));
+        box.appendChild(eqEl([{v:q.a,k:'f'},MUL,{v:q.b,k:'f'},MUL,{v:q.c,k:'g'},'=',{v:slot,k:'p'}]));
+        help=function(v){
+          if(v===q.a*q.b) return 'Asta e doar '+mul(q.a,q.b)+'. Acum înmulțește rezultatul cu '+q.c+'! 🧩';
+          return v+' nu e corect. Întâi '+mul(q.a,q.b)+' = ?, apoi rezultatul '+MUL+' '+q.c+'. 🧩';
+        };
+      } else if(q.kind==='repeat'){
+        box.appendChild(el('p','qline','Scrie adunarea ca înmulțire. De câte ori se repetă '+q.b+'?'));
+        box.appendChild(eqEl([{v:rep(q.b,q.a)},'=',{v:slot,k:'f'},MUL,{v:q.b,k:'g'}],'small'));
+        expected=q.a;
+        help=function(){return 'Numără termenii '+q.b+' din adunare! ➕';};
+      } else {
+        if(q.kind==='words') box.appendChild(el('p','qline','Cât este produsul numerelor '+q.a+' și '+q.b+'?'));
+        if(q.kind==='times') box.appendChild(el('p','qline','Cât fac de '+q.a+' ori câte '+q.b+'?'));
+        if(q.kind==='labels') box.appendChild(el('p','qline','Factorii sunt '+q.a+' și '+q.b+'. Află produsul!'));
+        box.appendChild(mulEq(q.a,q.b,slot,q.kind==='labels'||q.kind==='words'));
+        help=function(v){return mulHelp(q.a,q.b,v);};
+      }
+      numPad(box,slot,expected,function(){
+        done++;
+        fuel.children[done-1].classList.add('on');
+        launch.style.setProperty('--lv',String(done));
+        launch.classList.add('up');
+        counter.textContent='Combustibil: '+done+' / '+TOTAL+' ⛽';
+        whoosh();
+        if(done>=TOTAL){
+          say('3… 2… 1… DECOLARE! 🚀✨');
+          setTimeout(function(){
+            launch.classList.add('go');
+            fanfare();
+            win('Racheta a decolat! Ai răspuns corect la toate cele '+TOTAL+' întrebări! 🚀',4200);
+          },700);
+        } else {
+          say(choice(['Vrrrum! Încă puțin combustibil! ⛽','Racheta urcă! 🚀','Corect! Mai departe! ✨']));
+          setTimeout(function(){if(!locked) ask();},900);
+        }
+      },help);
+    }
+    ask();
+    say(intros.rocket);
+  }
+
+  // ---------- 5. Acvariul ----------
+  function fishSet(){
+    for(var tries=0;tries<200;tries++){
+      var f=fact({});
+      var T=f.a*f.b;
+      if(T<6) continue;
+      var good=[], bad=[], seen={};
+      function add(list,label,val,why){
+        if(seen[label]) return;
+        seen[label]=1;
+        list.push({label:label,v:val,why:why});
+      }
+      for(var x=1;x<=10;x++){
+        if(T%x || T/x>10) continue;
+        var y=T/x;
+        if((x===1 || y===1) && level!==2 && level!==4) continue;
+        add(good,mul(x,y),T);
+      }
+      for(var c=2;c<=4;c++){
+        if(T%c===0 && rep(T/c,c).length<=13) add(good,rep(T/c,c),T);
+      }
+      if(level===5){
+        for(var a=2;a<=5;a++) for(var b=2;b<=5;b++){
+          if(T%(a*b)===0 && T/(a*b)>=2 && T/(a*b)<=5) add(good,a+' '+MUL+' '+b+' '+MUL+' '+(T/(a*b)),T);
+        }
+      }
+      if(good.length<3) continue;
+      var why1='Calculează cu atenție și compară cu '+T+'! 🧮';
+      add(bad,f.a+' + '+f.b,f.a+f.b,'Atenție, aici e adunare: '+f.a+' + '+f.b+' = '+(f.a+f.b)+', nu '+T+'! ➕');
+      [[f.a,f.b+1],[f.a+1,f.b],[f.a,f.b-1],[f.a-1,f.b]].forEach(function(p){
+        if(p[0]>=2 && p[1]>=2 && p[0]<=10 && p[1]<=10) add(bad,mul(p[0],p[1]),p[0]*p[1],mul(p[0],p[1])+' = '+(p[0]*p[1])+', nu '+T+'. '+why1);
+      });
+      if(f.a<=3 && f.b>=2 && rep(f.b,f.a+1).length<=13) add(bad,rep(f.b,f.a+1),f.b*(f.a+1),'Numără termenii: sunt '+(f.a+1)+' de '+f.b+', prea mulți! ➕');
+      bad=bad.filter(function(it){return it.v!==T;});
+      if(bad.length<3) continue;
+      // păstrăm măcar o înmulțire printre peștii buni
+      var goodMul=good.filter(function(it){return it.label.indexOf('+')<0;});
+      var pick=[choice(goodMul)];
+      shuffle(good).forEach(function(it){if(pick.length<3 && pick.indexOf(it)<0) pick.push(it);});
+      return {T:T,good:pick,bad:shuffle(bad).slice(0,3)};
+    }
+    return {T:12,good:[{label:mul(3,4)},{label:mul(4,3)},{label:rep(6,2)}],
+      bad:[{label:'3 + 4',why:'Atenție, aici e adunare! ➕'},{label:mul(3,5),why:'3 · 5 = 15, nu 12.'},{label:mul(2,5),why:'2 · 5 = 10, nu 12.'}]};
+  }
+  function fishRound(){
+    var S=fishSet(), found=0;
+    question.textContent='Prinde peștii care au rezultatul:';
+    var bucket=el('div','bucket');
+    bucket.appendChild(el('span',null,'🪣'));
+    bucket.appendChild(el('span','big',String(S.T)));
+    visual.appendChild(bucket);
+    var counter=el('div','counter','Pești prinși: 0 / 3 🐟');
+    visual.appendChild(el('div')).appendChild(counter);
+    var aq=el('div','aquarium');
+    aq.appendChild(el('div','sand'));
+    ['8%','30%','62%','88%'].forEach(function(left,i){
+      var w=el('span','weed',i%2?'🌿':'🪸');
+      w.style.left=left;w.style.animationDelay=(-i*0.7)+'s';
+      aq.appendChild(w);
+    });
+    for(var i=0;i<6;i++){
+      var bub=el('span','bub');
+      bub.style.left=rand(4,94)+'%';
+      bub.style.animationDelay=(-Math.random()*4).toFixed(2)+'s';
+      bub.style.animationDuration=(3+Math.random()*3).toFixed(2)+'s';
+      aq.appendChild(bub);
+    }
+    var colors=shuffle(FISH_COLORS.slice());
+    var all=S.good.map(function(it){return {label:it.label,ok:true};}).concat(S.bad.map(function(it){return {label:it.label,ok:false,why:it.why};}));
+    shuffle(all).forEach(function(it,i){
+      var f=el('button','fish');
+      f.type='button';
+      f.style.setProperty('--fc',colors[i%colors.length]);
+      f.style.animationDelay=(-Math.random()*4).toFixed(2)+'s';
+      f.style.animationDuration=(3.4+Math.random()*1.6).toFixed(2)+'s';
+      f.setAttribute('aria-label',it.label);
+      f.appendChild(el('span','ft'));
+      f.appendChild(el('span','fn'));
+      f.appendChild(el('span','fb',it.label));
+      f.appendChild(el('span','fe'));
+      f.addEventListener('click',function(){
+        if(locked || f.disabled) return;
+        f.disabled=true;
+        if(it.ok){
+          popSound();
+          f.classList.add('caught');
+          bucket.classList.remove('got');void bucket.offsetWidth;bucket.classList.add('got');
+          found++;
+          counter.textContent='Pești prinși: '+found+' / 3 🐟';
+          setTimeout(function(){
+            var tag=el('div','f-tag');
+            tag.appendChild(el('span',null,'✔ '+it.label));
+            tag.appendChild(el('span',null,'= '+S.T));
+            f.replaceWith(tag);
+          },450);
+          if(found>=3){
+            fanfare();
+            win('Bravo! Toți cei 3 pești au rezultatul '+S.T+'! 🐠✔',3600);
+          } else say(choice(['Prins! 🎣 ','Pleosc! 🐟 ','Super! 🪣 '])+it.label+' = '+S.T+'. Mai caută!');
+        } else {
+          f.classList.add('bad');
+          fail(it.why);
+        }
+      });
+      aq.appendChild(f);
+    });
+    activity.appendChild(aq);
+    say('Găletușa vrea doar peștii cu rezultatul '+S.T+'. Sunt 3! 🎣');
+  }
+
+  // ---------- Runde și meniuri ----------
+  var rounds={basket:basketRound,frog:frogRound,garden:gardenRound,rocket:rocketRound,fish:fishRound};
+  function newRound(){
+    clearTimeout(nextTimer);
+    locked=false;
+    keyHandler=null;
+    layoutHook=null;
+    hintBox.hidden=true;
+    hintBtn.setAttribute('aria-expanded','false');
+    question.replaceChildren();
+    visual.replaceChildren();
+    activity.replaceChildren();
+    rounds[game]();
+  }
+  function selectGame(name,animateWalk){
+    game=name;
+    title.textContent=names[name];
+    gameButtons.forEach(function(button){
+      var active=button.dataset.game===name;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-current',active?'true':'false');
+    });
+    levelNote.textContent=LEVEL_NOTES[level];
+    newRound();
+    if(name!=='rocket') say(intros[name]);
+    moveRebeTo(activeButton(),animateWalk);
+  }
+  gameButtons.forEach(function(button){
+    button.addEventListener('click',function(){selectGame(button.dataset.game,true);});
+  });
+  levelButtons.forEach(function(button){
+    button.addEventListener('click',function(){
+      level=Number(button.dataset.level);
+      localStorage.setItem('rebe7_level',String(level));
+      levelButtons.forEach(function(b){b.classList.toggle('active',b===button);});
+      levelNote.textContent=LEVEL_NOTES[level];
+      newRound();
+      say('Nivelul '+level+'. '+LEVEL_NOTES[level]+'.');
+    });
+    button.classList.toggle('active',Number(button.dataset.level)===level);
+  });
+  hintBtn.addEventListener('click',function(){
+    hintBox.hidden=!hintBox.hidden;
+    hintBtn.setAttribute('aria-expanded',String(!hintBox.hidden));
+    if(!hintBox.hidden){
+      hintBox.replaceChildren(el('div',null,'💡 '+(level===5 && hints5[game]?hints5[game]:hints[game])));
+      var ul=el('ul','rules');
+      RULES.forEach(function(r){ul.appendChild(el('li',null,r));});
+      hintBox.appendChild(ul);
+      say('Privește indiciul și mai încearcă! 😊');
+    }
+  });
+  document.getElementById('againBtn').addEventListener('click',function(){
+    newRound();
+    say('O nouă întrebare! Hai să încercăm! 🌈');
+  });
+  document.addEventListener('keydown',function(e){
+    if(keyHandler && !e.ctrlKey && !e.metaKey && !e.altKey && !document.querySelector('.lb-overlay')) keyHandler(e);
+  });
+  muteBtn.addEventListener('click',function(){
+    muted=!muted;
+    localStorage.setItem('rebe_muted',muted?'1':'0');
+    muteBtn.textContent=muted?'🔇':'🔊';
+    muteBtn.setAttribute('aria-label',muted?'Pornește sunetul':'Oprește sunetul');
+  });
+  starCount.textContent=stars;
+  muteBtn.textContent=muted?'🔇':'🔊';
+  muteBtn.setAttribute('aria-label',muted?'Pornește sunetul':'Oprește sunetul');
+  selectGame('basket',false);
+  say('Bună! Sunt Rebe. Azi învățăm ÎNMULȚIREA! ✖️ Hai la coșulețe!');
+  window.addEventListener('resize',repositionRebe);
+  window.addEventListener('load',repositionRebe);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(repositionRebe);
+  setTimeout(repositionRebe,400);
+})();
+</script>
+</body>
+</html>

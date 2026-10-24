@@ -395,6 +395,7 @@
     'Provocare: două treceri peste ordin, până la 1000 (ex. 476 + 358)'];
   var PRAISE=['Bravo! Ai câștigat o stea! ⭐','Super! Încă o stea! 🌟','Excelent, detectivule! ⭐','Ești grozavă! 💖⭐','Proba iese! Felicitări! 🎉'];
   var TREASURES=['💎','👑','🪙','🦄','🍭','🎁','🌈','🧁','🐚','🏆'];
+  var chestWins=Number(localStorage.getItem('rebe6_chest_wins'))||0; // la fiecare a 2-a rezolvare iese curcubeul
   var PETS=['🐱','🐶','🐰','🦊','🐼','🐨','🐸','🐹','🐥','🦔'];
   var BALLOON_COLORS=['#f43f5e','#8b5cf6','#0ea5e9','#22c55e','#f59e0b','#ec4899'];
 
@@ -743,7 +744,8 @@
     question.appendChild(taskEl(ex,m));
     question.appendChild(document.createTextNode(' 🔒'));
     var box=el('div','chest-box');
-    var treasure=el('div','treasure',choice(TREASURES));
+    var rainbow=chestWins%2===1;
+    var treasure=el('div','treasure',rainbow?'🌈':choice(TREASURES.filter(function(t){return t!=='🌈';})));
     box.appendChild(treasure);
     box.appendChild(el('div','chest','🧰'));
     var lock=el('div','lock','🔒');
@@ -762,6 +764,8 @@
         slot.parentNode.className='n k'+p.rk;
         lock.textContent='🔓';
         box.classList.add('open');
+        chestWins++;
+        localStorage.setItem('rebe6_chest_wins',String(chestWins));
         fanfare();
         win('Proba iese: am obținut '+p.r+' – '+p.tgt+'! ✔ Cufărul s-a deschis!',3400);
       },function(v){return calcHelp(p.x,p.op,p.y,v,p.r);});
