@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+"""Check whether DIVISOR divides RSA-2048.
+
+Usage: DIVISOR=<number> python3 check.py
+"""
+import os
+import sys
+
+# RSA-2048 from the RSA Factoring Challenge (617 decimal digits, 2048 bits)
+RSA_2048 = int(
+    "25195908475657893494027183240048398571429282126204"
+    "03202777713783604366202070759555626401852588078440"
+    "69182906412495150821892985591491761845028084891200"
+    "72844992687392807287776735971418347270261896375014"
+    "97182469116507761337985909570009733045974880842840"
+    "17974291006424586918171951187461215151726546322822"
+    "16869987549182422433637259085141865462043576798423"
+    "38718477444792073993423658482382428119816381501067"
+    "48104516603773060562016196762561338441436038339044"
+    "14952634432190114657544454178424020924616515723350"
+    "77870774981712577246796292638635637328991215483143"
+    "81678998850404453640235273819513786365643912120103"
+    "97122822120720357"
+)
+
+value = os.environ.get("DIVISOR")
+if not value:
+    sys.exit("Usage: DIVISOR=<number> python3 check.py")
+
+try:
+    divisor = int(value)
+except ValueError:
+    sys.exit(f"DIVISOR must be an integer, got: {value!r}")
+
+if divisor <= 0:
+    sys.exit("DIVISOR must be a positive integer")
+
+quotient, remainder = divmod(RSA_2048, divisor)
+if remainder == 0:
+    print(f"{divisor} divides RSA-2048")
+    print(f"RSA-2048 / {divisor} = {quotient}")
+else:
+    print(f"{divisor} does NOT divide RSA-2048")
