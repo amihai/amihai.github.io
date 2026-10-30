@@ -138,6 +138,21 @@
   .eq .slot.typing{color:var(--ink);border-style:solid;border-color:var(--purple);}
   .eq .slot.ok{border-style:solid;border-color:var(--green);background:#eafaf0;animation:pop .3s ease;}
   .eq .slot.bad{animation:shake-x .4s ease;}
+  /* rezultat scris pe rând: unități, zeci, sute */
+  .pu{--c:#0ea5e9;--cl:#dff4ff;}
+  .pt{--c:#8b5cf6;--cl:#ede4ff;}
+  .ph{--c:#ec4899;--cl:#ffe1f0;}
+  .pm{--c:#f59e0b;--cl:#fff3d6;}
+  .eq .slot.digits{display:inline-flex;gap:5px;min-width:0;padding:0;border:none;background:none;}
+  .eq .slot .nd{display:inline-flex;flex-direction:column;align-items:center;min-width:1.05em;padding:0 5px;
+    border:3px dashed var(--c);border-radius:12px;background:#fff;color:var(--c);opacity:.5;}
+  .eq .slot .nd b{font-weight:800;line-height:1.1;}
+  .eq .slot .nd i{font-style:normal;font-size:12px;font-weight:800;line-height:1;margin-bottom:3px;}
+  .eq .slot .nd.fill{opacity:1;border-style:solid;background:var(--cl);}
+  .eq .slot .nd.cur{opacity:1;border-style:solid;box-shadow:0 0 0 4px var(--cl);animation:nd-pulse 1s ease-in-out infinite;}
+  .eq .slot.ok .nd{border-color:var(--green);}
+  @keyframes nd-pulse{50%{transform:translateY(-3px)}}
+  .nd-guide{margin:8px auto 0;font-weight:800;color:#6d5a9e;font-size:clamp(14px,3.4vw,17px);min-height:1.2em;}
   @keyframes shake-x{0%,100%{transform:translateX(0)}25%,75%{transform:translateX(-6px)}50%{transform:translateX(6px)}}
 
   /* ---------- Pași + tastatură ---------- */
@@ -667,37 +682,59 @@
     container.appendChild(row);
     return row;
   }
-  // tastatură pentru un număr; cifrele apar în „slot”
+  // tastatură pentru un număr: cifrele se scriu pe rând, ca în coloană –
+  // întâi unitățile, apoi zecile, apoi sutele…
+  var ND_CLS=['pu','pt','ph','pm'], ND_LETTER=['U','Z','S','M'];
+  var ND_GEN=['unităților','zecilor','sutelor','miilor'];
   function numPad(container,slot,expected,onRight,wrongMsg){
-    var typed='', done=false;
+    var len=String(expected).length, typed=[], done=false, boxes=[];
+    var guide=el('div','nd-guide');
     var pad=el('div','numpad');
+    slot.replaceChildren();
+    slot.classList.add('digits');
+    for(var i=len-1;i>=0;i--){
+      var b=el('span','nd '+ND_CLS[i]);
+      b.appendChild(el('b',null,'?'));
+      b.appendChild(el('i',null,ND_LETTER[i]));
+      slot.appendChild(b);
+      boxes[i]=b;
+    }
     function render(){
-      slot.textContent=typed||'?';
-      slot.classList.toggle('typing',!!typed);
+      boxes.forEach(function(b,i){
+        b.firstChild.textContent=i<typed.length?String(typed[i]):'?';
+        b.classList.toggle('fill',i<typed.length);
+        b.classList.toggle('cur',!done && i===typed.length);
+      });
+      slot.classList.toggle('typing',typed.length>0);
+      guide.textContent=done?'':typed.length<len?'Scrie cifra '+ND_GEN[typed.length]+' ✏️':'Gata? Apasă ✔';
+    }
+    function value(){
+      return typed.reduce(function(s,d,i){return s+d*Math.pow(10,i);},0);
     }
     function press(k){
       if(locked || done) return;
-      if(k==='del'){typed=typed.slice(0,-1);render();return;}
+      if(k==='del'){typed.pop();render();return;}
       if(k==='ok'){
-        if(!typed){say('Scrie întâi rezultatul cu tastele! 🔢');return;}
-        var v=Number(typed);
+        if(typed.length<len){say('Mai scrie cifra '+ND_GEN[typed.length]+'! 🔢');return;}
+        var v=value();
         if(v===expected){
           done=true;
           keyHandler=null;
           slot.classList.remove('typing');
           slot.classList.add('ok');
           pad.classList.add('off');
+          render();
           tick();
           onRight();
         } else {
           fail(wrongMsg(v));
           slot.classList.remove('bad');void slot.offsetWidth;slot.classList.add('bad');
-          typed='';render();
+          typed=[];render();
         }
         return;
       }
-      if(typed.length>=3) return;
-      typed=(typed==='0'?'':typed)+k;
+      if(typed.length>=len) return;
+      typed.push(Number(k));
       tick();
       render();
     }
@@ -708,6 +745,7 @@
       if(k==='ok') b.setAttribute('aria-label','Gata');
       pad.appendChild(b);
     });
+    container.appendChild(guide);
     container.appendChild(pad);
     keyHandler=function(e){
       if(/^[0-9]$/.test(e.key)) press(e.key);
