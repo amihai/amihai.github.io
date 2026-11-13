@@ -138,7 +138,7 @@
   .eq .slot.typing{color:var(--ink);border-style:solid;border-color:var(--purple);}
   .eq .slot.ok{border-style:solid;border-color:var(--green);background:#eafaf0;animation:pop .3s ease;}
   .eq .slot.bad{animation:shake-x .4s ease;}
-  /* rezultat scris pe rând: unități, zeci, sute */
+  /* rezultatul scris cifră cu cifră, cu ordinul fiecărei cifre (U, Z, S) */
   .pu{--c:#0ea5e9;--cl:#dff4ff;}
   .pt{--c:#8b5cf6;--cl:#ede4ff;}
   .ph{--c:#ec4899;--cl:#ffe1f0;}
@@ -682,11 +682,12 @@
     container.appendChild(row);
     return row;
   }
-  // tastatură pentru un număr: cifrele se scriu pe rând, ca în coloană –
+  // tastatură pentru un număr. Rezultatele directe (ex. produsele din tablă) se scriu
+  // normal, de la stânga la dreapta. Doar la calcule (rtl=true) scriem ca în coloană –
   // întâi unitățile, apoi zecile, apoi sutele…
   var ND_CLS=['pu','pt','ph','pm'], ND_LETTER=['U','Z','S','M'];
   var ND_GEN=['unităților','zecilor','sutelor','miilor'];
-  function numPad(container,slot,expected,onRight,wrongMsg){
+  function numPad(container,slot,expected,onRight,wrongMsg,rtl){
     var len=String(expected).length, typed=[], done=false, boxes=[];
     var guide=el('div','nd-guide');
     var pad=el('div','numpad');
@@ -699,23 +700,26 @@
       slot.appendChild(b);
       boxes[i]=b;
     }
+    // ordinul (0 = unități) în care intră a k-a cifră tastată
+    function place(k){return rtl?k:len-1-k;}
     function render(){
       boxes.forEach(function(b,i){
-        b.firstChild.textContent=i<typed.length?String(typed[i]):'?';
-        b.classList.toggle('fill',i<typed.length);
-        b.classList.toggle('cur',!done && i===typed.length);
+        var k=place(i);
+        b.firstChild.textContent=k<typed.length?String(typed[k]):'?';
+        b.classList.toggle('fill',k<typed.length);
+        b.classList.toggle('cur',!done && k===typed.length);
       });
       slot.classList.toggle('typing',typed.length>0);
-      guide.textContent=done?'':typed.length<len?'Scrie cifra '+ND_GEN[typed.length]+' ✏️':'Gata? Apasă ✔';
+      guide.textContent=done?'':typed.length<len?'Scrie cifra '+ND_GEN[place(typed.length)]+' ✏️':'Gata? Apasă ✔';
     }
     function value(){
-      return typed.reduce(function(s,d,i){return s+d*Math.pow(10,i);},0);
+      return typed.reduce(function(s,d,k){return s+d*Math.pow(10,place(k));},0);
     }
     function press(k){
       if(locked || done) return;
       if(k==='del'){typed.pop();render();return;}
       if(k==='ok'){
-        if(typed.length<len){say('Mai scrie cifra '+ND_GEN[typed.length]+'! 🔢');return;}
+        if(typed.length<len){say('Mai scrie cifra '+ND_GEN[place(typed.length)]+'! 🔢');return;}
         var v=value();
         if(v===expected){
           done=true;
@@ -841,8 +845,8 @@
       numPad(s4,slot,R,function(){
         fanfare();
         win(mul(k,n)+' '+extra.op+' '+extra.e+' = '+P+' '+extra.op+' '+extra.e+' = '+R+' '+fr.e,3800);
-      },function(v){return v+' nu e corect. Socotește '+P+' '+extra.op+' '+extra.e+' cu atenție! 🧮';});
-      say('Super! Acum a doua operație: '+P+' '+extra.op+' '+extra.e+'. ✏️');
+      },function(v){return v+' nu e corect. Socotește '+P+' '+extra.op+' '+extra.e+' cu atenție! 🧮';},true);
+      say('Super! Acum a doua operație: '+P+' '+extra.op+' '+extra.e+'. Începe cu unitățile! ✏️');
     }
   }
 

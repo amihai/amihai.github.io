@@ -1,0 +1,2110 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rebe - Aventura lui Capi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--pink:#ff5ea8;--purple:#8b5cf6;--green:#34d399;--ink:#3b2b57;--orange:#f97316;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;min-height:100vh;padding:12px;
+    font-family:'Fredoka','Comic Sans MS','Chalkboard SE',system-ui,sans-serif;
+    color:var(--ink);background:linear-gradient(180deg,#a9e0fb,#c9edff 42%,#eaf8ff);
+  }
+  button{font-family:inherit;cursor:pointer;color:inherit;}
+  .wrap{max-width:920px;margin:auto;}
+  header,.panel,.mapcard,.speech{background:#fff;border:3px solid #fff;box-shadow:0 8px 22px rgba(139,92,246,.15);}
+  header{display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:22px;padding:10px 16px;}
+  header h1{margin:0;font-size:clamp(18px,4.5vw,28px);color:#b45309;}
+  header a{color:var(--purple);font-weight:700;text-decoration:none;white-space:nowrap;}
+  header a:hover{text-decoration:underline;}
+  .stars{white-space:nowrap;background:#fff7d6;border:2px solid #ffd766;border-radius:999px;padding:6px 10px;font-weight:700;position:relative;}
+  .stars.bump{animation:star-bump .5s ease;}
+  @keyframes star-bump{50%{transform:scale(1.25)}}
+  .plus-star{position:absolute;left:50%;top:-4px;transform:translateX(-50%);font-weight:800;color:#d97706;pointer-events:none;white-space:nowrap;animation:plus-up 1.1s ease forwards;}
+  @keyframes plus-up{0%{opacity:0;transform:translate(-50%,6px)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-26px)}}
+  .top-actions{display:flex;align-items:center;gap:7px;}
+  .mute-btn{border:0;background:#f1ecff;border-radius:50%;width:44px;height:44px;font-size:22px;}
+  @keyframes pop{0%{transform:scale(.85);opacity:0}100%{transform:scale(1);opacity:1}}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  @keyframes jump{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-30px) scale(1.06) rotate(-4deg)}55%{transform:translateY(0) scale(1)}70%{transform:translateY(-14px) rotate(3deg)}100%{transform:translateY(0)}}
+  @keyframes shake{0%,100%{transform:rotate(0)}20%{transform:rotate(-9deg)}40%{transform:rotate(9deg)}60%{transform:rotate(-6deg)}80%{transform:rotate(6deg)}}
+  @keyframes shake-x{0%,100%{transform:translateX(0)}25%,75%{transform:translateX(-6px)}50%{transform:translateX(6px)}}
+
+  /* ---------- Harta ---------- */
+  .mapcard{border-radius:22px;margin-top:14px;padding:8px;}
+  .map-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:2px 4px 8px;}
+  .chapter-badge{font-weight:800;font-size:clamp(15px,3.8vw,19px);}
+  .progress{flex:1 1 160px;display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:#6b5b92;}
+  .progress-bar{display:block;flex:1;height:12px;border-radius:999px;background:#f1ecff;overflow:hidden;}
+  .progress-fill{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#34d399,#fbbf24,#f97316);transition:width .8s ease;}
+  .zoom-btn{border:2px solid #e6e0ff;background:#faf7ff;border-radius:12px;padding:5px 10px;font-weight:700;font-size:14px;}
+  .map-wrap{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:600/1000;max-width:560px;margin:0 auto;background:#ecfccb;}
+  .map-wrap.zoom{aspect-ratio:4/3;max-width:none;}
+  #map{display:block;width:100%;height:100%;}
+  #map text{font-family:inherit;}
+  .lbl{font-size:21px;font-weight:700;fill:#3b2b57;stroke:#fff;stroke-width:5px;paint-order:stroke;stroke-linejoin:round;text-anchor:middle;}
+  .deco{text-anchor:middle;dominant-baseline:central;pointer-events:none;}
+  .river-flow{animation:flow 2.4s linear infinite;}
+  @keyframes flow{to{stroke-dashoffset:-72}}
+  .route-bg{fill:none;stroke:#fde68a;stroke-width:15;stroke-linecap:round;opacity:.9;}
+  .route{fill:none;stroke:#b45309;stroke-width:3.5;stroke-dasharray:3 9;stroke-linecap:round;}
+  .route.r1{stroke:#fff;}
+  .route.r3{display:none;}
+  .dot{fill:#fff;stroke:#a78bfa;stroke-width:3;transform-box:fill-box;transform-origin:center;transition:fill .4s;}
+  .dot.done{fill:#fbbf24;stroke:#d97706;}
+  .dot.next{stroke:var(--pink);stroke-width:4;animation:dot-pulse 1.1s ease-in-out infinite;}
+  @keyframes dot-pulse{50%{transform:scale(1.45)}}
+  .plank{fill:none;stroke:#a16207;stroke-width:2;stroke-dasharray:4 3;opacity:.7;transform-box:fill-box;transform-origin:center;}
+  .plank.done{fill:#d97706;stroke:#78350f;stroke-dasharray:none;opacity:1;animation:pop .4s ease;}
+  .plank.next{stroke:var(--pink);stroke-width:3;opacity:1;animation:dot-pulse 1.1s ease-in-out infinite;}
+  .gift{font-size:24px;text-anchor:middle;dominant-baseline:central;transition:opacity .4s;}
+  .gift.todo{opacity:.35;filter:grayscale(1);}
+  #capiBob{transform-box:fill-box;transform-origin:50% 100%;animation:bob 2.4s ease-in-out infinite;}
+  #capi.walking #capiBob{animation:waddle .34s ease-in-out infinite;}
+  #capi.happy #capiBob{animation:jump .7s ease;}
+  #capi.oops #capiBob{animation:shake .5s ease;}
+  @keyframes waddle{0%,100%{transform:translateY(-3px) rotate(-5deg)}50%{transform:translateY(-3px) rotate(5deg)}}
+  .capi-ripple{display:none;fill:none;stroke:#fff;stroke-width:3;opacity:.85;}
+  #capi.swim .capi-ripple{display:block;}
+  #capi.swim .capi-shadow{display:none;}
+  .capi-shadow{fill:rgba(0,0,0,.18);}
+  /* rucsacul stă lângă bula în care vorbește Capi */
+  .bag{flex:none;display:flex;flex-direction:column;align-items:center;gap:5px;background:#fffbeb;border:3px solid #fde68a;border-radius:18px;
+    padding:7px 12px;box-shadow:0 6px 16px rgba(180,83,9,.12);}
+  .bag-title{font-weight:700;font-size:13px;color:#92400e;white-space:nowrap;}
+  .bag-items{display:flex;gap:4px;}
+  .bag span.g{font-size:24px;line-height:1;transition:opacity .4s,filter .4s;}
+  .bag span.g.todo{opacity:.3;filter:grayscale(1);}
+  .bag span.g.new{animation:jump .9s ease;}
+
+  /* ---------- Capi vorbește ---------- */
+  .speech-row{display:flex;align-items:center;gap:12px;max-width:860px;margin:14px auto 0;}
+  .capi-face{flex:none;width:clamp(56px,14vw,72px);height:clamp(56px,14vw,72px);border-radius:50%;object-fit:cover;
+    border:4px solid #fff;box-shadow:0 4px 12px rgba(180,83,9,.3);animation:bob 2.6s ease-in-out infinite;}
+  .capi-face.oops{animation:shake .5s ease;}
+  .capi-face.happy{animation:jump .7s ease;}
+  .speech{position:relative;flex:1;text-align:center;border-color:#f59e0b;border-radius:18px;
+    padding:12px 16px;font-size:clamp(15px,3.4vw,19px);font-weight:500;animation:pop .3s ease;}
+  .speech::before{content:"";position:absolute;left:-16px;top:50%;transform:translateY(-50%);border:8px solid transparent;border-right-color:#f59e0b;}
+
+  /* ---------- Panoul cu întrebarea ---------- */
+  .panel{border-radius:26px;margin-top:14px;padding:18px 12px 24px;text-align:center;min-height:320px;overflow-x:clip;}
+  .panel h2{font-size:clamp(17px,4vw,22px);margin:0 0 10px;color:#8545cf;}
+  .question{font-size:clamp(18px,4.2vw,24px);font-weight:700;margin:6px auto 10px;max-width:680px;line-height:1.35;}
+  .story{max-width:640px;margin:0 auto 6px;font-size:clamp(16px,3.8vw,20px);font-weight:600;color:#5b4d80;line-height:1.45;}
+  .answers,.tiles{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:14px auto;}
+  .ans,.tile{border:3px solid #e6e0ff;border-radius:18px;background:#fff;min-width:70px;min-height:60px;padding:9px 14px;
+    font-size:clamp(22px,5vw,28px);font-weight:700;box-shadow:0 5px 0 #ded6ff;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;}
+  .ans small{font-size:13px;font-weight:700;color:#7c6aa8;}
+  .ans.wide{font-size:clamp(18px,4.6vw,24px);}
+  .ans:hover:not(:disabled),.tile:hover:not(:disabled){border-color:var(--pink);}
+  .ans:disabled,.tile:disabled{cursor:default;}
+  .ans.correct,.tile.correct{background:#d7fbe8;border-color:var(--green);box-shadow:0 5px 0 #79e0b3;}
+  .ans.wrong,.tile.wrong{background:#ffe0e6;border-color:#e23e8c;animation:shake-x .4s ease;}
+  .tile.used{opacity:.25;}
+  .controls{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:20px;}
+  .controls button{border:0;border-radius:16px;padding:10px 18px;font-size:16px;font-weight:700;box-shadow:0 5px 0 rgba(0,0,0,.14);}
+  .hint-btn{background:linear-gradient(90deg,#fbbf24,#fb923c);}
+  .hint-box{margin:16px auto 0;max-width:580px;text-align:left;background:#fffbe9;border:3px solid #fbbf24;border-radius:18px;padding:14px 16px;font-size:17px;line-height:1.5;}
+  .rules{margin:8px 0 0;padding-left:20px;}
+  .rules li{margin:4px 0;}
+  [hidden]{display:none!important;}
+  .result-line{display:inline-block;margin:14px auto 0;font-size:clamp(17px,4.2vw,23px);font-weight:700;color:#065f46;
+    background:#e9fbf2;border:3px solid var(--green);border-radius:16px;padding:8px 14px;animation:pop .3s ease;}
+  footer{text-align:center;margin:18px 0;color:#8175a7;font-size:13px;line-height:1.5;}
+  footer a{color:#8175a7;}
+
+  /* ---------- Egalități colorate + tastatură ---------- */
+  .eq{display:flex;align-items:flex-start;justify-content:center;gap:clamp(6px,2vw,14px);flex-wrap:wrap;margin:6px auto;}
+  .eq .n{display:flex;flex-direction:column;align-items:center;min-width:1.6em;}
+  .eq .v,.eq .o{font-size:clamp(28px,7.5vw,42px);font-weight:800;line-height:1.2;}
+  .eq .v{color:var(--kc,var(--ink));}
+  .eq .o{color:#a78bfa;}
+  .eq .l{font-size:clamp(11px,2.8vw,13px);font-weight:700;color:var(--kc,#7c6aa8);}
+  .eq.small .v,.eq.small .o{font-size:clamp(22px,5.6vw,30px);}
+  .eq .hl .v{background:#ffe1f0;border-radius:12px;padding:0 8px;box-shadow:0 0 0 3px #f9a8d4;}
+  .ka{--kc:#0284c7;} .kb{--kc:#7c3aed;} .ks{--kc:#db2777;}
+  .eq .slot{display:inline-block;min-width:2.4em;padding:0 8px;border:3px dashed #c8b5f8;border-radius:12px;background:#fdfcff;color:#b9a6f3;text-align:center;}
+  .eq .slot.typing{color:var(--ink);border-style:solid;border-color:var(--purple);}
+  .eq .slot.ok{border-style:solid;border-color:var(--green);background:#eafaf0;color:#065f46;animation:pop .3s ease;}
+  .eq .slot.bad{animation:shake-x .4s ease;}
+  .pu{--c:#0ea5e9;--cl:#dff4ff;}
+  .pt{--c:#8b5cf6;--cl:#ede4ff;}
+  .ph{--c:#ec4899;--cl:#ffe1f0;}
+  .eq .slot.digits{display:inline-flex;gap:5px;min-width:0;padding:0;border:none;background:none;}
+  .eq .slot .nd{display:inline-flex;flex-direction:column;align-items:center;min-width:1.05em;padding:0 5px;
+    border:3px dashed var(--c);border-radius:12px;background:#fff;color:var(--c);opacity:.5;}
+  .eq .slot .nd b{font-weight:800;line-height:1.1;}
+  .eq .slot .nd i{font-style:normal;font-size:12px;font-weight:800;line-height:1;margin-bottom:3px;}
+  .eq .slot .nd.fill{opacity:1;border-style:solid;background:var(--cl);}
+  .eq .slot .nd.cur{opacity:1;border-style:solid;box-shadow:0 0 0 4px var(--cl);animation:nd-pulse 1s ease-in-out infinite;}
+  .eq .slot.ok .nd{border-color:var(--green);}
+  @keyframes nd-pulse{50%{transform:translateY(-3px)}}
+  .nd-guide{margin:8px auto 0;font-weight:800;color:#6d5a9e;font-size:clamp(14px,3.4vw,17px);min-height:1.2em;}
+  .step{margin:12px auto 0;max-width:620px;padding:10px 12px;border-radius:18px;background:#faf7ff;border:3px solid #ece4ff;animation:pop .3s ease;}
+  .step h3{margin:0 0 4px;font-size:clamp(15px,3.6vw,19px);}
+  .step .answers{margin:8px auto 4px;}
+  .step.done{background:#f3fcf7;border-color:#c8f5dc;}
+  .step.done .numpad,.step.done .nd-guide{display:none;}
+  .numpad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-width:270px;margin:10px auto 2px;}
+  .keypad{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;max-width:360px;margin:12px auto 0;}
+  .key{border:3px solid #e6e0ff;border-radius:14px;background:#fff;height:54px;font-size:26px;font-weight:800;box-shadow:0 4px 0 #ded6ff;}
+  .key:active{transform:translateY(2px);box-shadow:0 2px 0 #ded6ff;}
+  .key.ok{background:#d1fae5;border-color:#34d399;box-shadow:0 4px 0 #6ee7b7;}
+  .key.del{background:#fff1f2;border-color:#fecdd3;box-shadow:0 4px 0 #fecdd3;}
+  .key.wrong{background:#ffe0e6;border-color:#e23e8c;animation:shake-x .4s ease;}
+  .numpad.off,.keypad.off{opacity:.45;pointer-events:none;}
+
+  /* ---------- Calcul în coloană ---------- */
+  .colop{--cw:clamp(42px,11vw,58px);display:inline-grid;gap:2px 5px;margin:4px auto;font-size:clamp(28px,7.6vw,42px);font-weight:800;}
+  .colop .cell{height:1.3em;display:flex;align-items:center;justify-content:center;border-radius:10px;transition:background .2s;}
+  .colop .hd{font-size:13px;height:auto;color:var(--c);padding:2px 0;}
+  .colop .cr{font-size:.45em;height:1.1em;color:#e11d48;}
+  .colop .cr.on{animation:pop .3s ease;}
+  .colop .sign{color:var(--purple);justify-content:flex-start;align-items:flex-start;font-size:.8em;}
+  .colop .bar{grid-column:1/-2;height:5px;background:var(--ink);border-radius:3px;margin:2px 0;}
+  .colop .res{border:3px dashed #c8b5f8;}
+  .colop .res.filled{border-style:solid;border-color:var(--green);background:#eafaf0;animation:pop .25s ease;}
+  .colop .act{background:var(--cl);}
+  .colop .res.act{border-color:var(--c);border-style:solid;}
+  .card{display:inline-block;background:#faf7ff;border:3px solid #ece4ff;border-radius:20px;padding:8px 14px;margin:4px auto;}
+  .card.water{background:linear-gradient(180deg,#e0f2fe,#bae6fd);border-color:#7dd3fc;}
+  .card.rock{background:linear-gradient(180deg,#f5f5f4,#e7e5e4);border-color:#d6d3d1;}
+  .card.wood{background:linear-gradient(180deg,#fef3c7,#fde68a);border-color:#f59e0b;}
+  .card.leaf{background:linear-gradient(180deg,#ecfccb,#d9f99d);border-color:#a3e635;}
+
+  /* ---------- Pădurea ---------- */
+  .items{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin:6px auto;}
+  .ibox{display:grid;grid-template-columns:repeat(5,auto);gap:2px 6px;padding:8px 10px;border-radius:16px;background:#f0fdf4;border:3px dashed #86efac;
+    font-size:clamp(24px,6.4vw,34px);line-height:1.15;align-content:start;}
+  .ibox span{animation:pop .35s ease backwards;}
+  .pv{display:flex;justify-content:center;gap:clamp(12px,4vw,30px);flex-wrap:wrap;margin:6px auto 4px;}
+  .pv-g{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:80px;}
+  .pv-row{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;align-items:flex-end;max-width:170px;min-height:46px;}
+  .pv-h{width:clamp(36px,9vw,46px);aspect-ratio:1;border:2px solid #be185d;border-radius:3px;
+    background:linear-gradient(rgba(190,24,93,.45) 1px,transparent 1px) 0 0/10% 10%,linear-gradient(90deg,rgba(190,24,93,.45) 1px,transparent 1px) 0 0/10% 10%,#fbcfe8;}
+  .pv-t{width:clamp(8px,2vw,10px);height:clamp(36px,9vw,46px);border:2px solid #6d28d9;border-radius:2px;
+    background:linear-gradient(rgba(109,40,217,.5) 1px,transparent 1px) 0 0/100% 10%,#ddd6fe;}
+  .pv-u{width:clamp(9px,2.2vw,11px);height:clamp(9px,2.2vw,11px);border:2px solid #0369a1;border-radius:2px;background:#7dd3fc;}
+  .pv-lab{font-weight:800;font-size:14px;color:var(--c);}
+  .pv-none{font-size:13px;color:#8a7fb5;font-weight:700;align-self:center;}
+  .axis{position:relative;max-width:640px;height:104px;margin:8px auto;}
+  .axis-line{position:absolute;left:2%;right:1%;top:42px;height:5px;background:var(--ink);border-radius:3px;}
+  .axis-line::after{content:"";position:absolute;right:-4px;top:50%;transform:translateY(-50%);border:9px solid transparent;border-left-color:var(--ink);border-right:0;}
+  .tick{position:absolute;top:32px;width:4px;height:25px;background:var(--ink);transform:translateX(-50%);border-radius:2px;}
+  .tick.small{top:37px;height:15px;width:3px;background:#8a7fb5;}
+  .tick-lab{position:absolute;top:64px;transform:translateX(-50%);font-weight:800;font-size:clamp(13px,3.6vw,20px);white-space:nowrap;}
+  .tick-lab.q{background:#ffe1f0;color:#be185d;border:2px dashed #ec4899;border-radius:10px;padding:0 8px;}
+  .marker{position:absolute;top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;}
+  .marker b{background:#f97316;color:#fff;border-radius:10px;padding:0 8px;font-size:clamp(14px,3.6vw,19px);}
+  .marker i{width:0;height:0;border:7px solid transparent;border-top-color:#f97316;}
+  .order-slots{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin:10px auto 4px;}
+  .oslot{min-width:clamp(58px,15vw,78px);height:56px;border:3px dashed #c8b5f8;border-radius:16px;display:flex;align-items:center;justify-content:center;
+    font-size:clamp(20px,5vw,26px);font-weight:800;background:#fdfcff;}
+  .oslot.filled{border-style:solid;border-color:var(--green);background:#eafaf0;animation:pop .3s ease;}
+  .oslot.cur{border-color:var(--pink);}
+  .osep{font-size:24px;font-weight:800;color:#a78bfa;}
+
+  /* ---------- Muntele: bani și balanță ---------- */
+  .shop{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:6px 0;}
+  .item{background:#fff7ed;border:3px solid #fed7aa;border-radius:18px;padding:8px 14px;min-width:104px;}
+  .item .em{font-size:44px;line-height:1.1;}
+  .item .price{display:inline-block;margin-top:4px;background:#fde047;border-radius:8px;padding:2px 8px;font-weight:800;}
+  .item.wallet{background:#f5f3ff;border-color:#ddd6fe;}
+  .bills{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:10px 0 4px;}
+  .bill{display:inline-flex;align-items:center;justify-content:center;width:86px;height:44px;border-radius:8px;border:3px solid;
+    font-weight:800;font-size:15px;box-shadow:0 3px 0 rgba(0,0,0,.15);padding:0;}
+  .bill.b100{background:linear-gradient(135deg,#dbeafe,#93c5fd);border-color:#3b82f6;color:#1e3a8a;}
+  .bill.b10{background:linear-gradient(135deg,#ffe4e6,#fda4af);border-color:#e11d48;color:#881337;}
+  .bill.b1{background:linear-gradient(135deg,#dcfce7,#86efac);border-color:#16a34a;color:#14532d;}
+  .bills .bill:active{transform:translateY(2px);box-shadow:none;}
+  .tray{min-height:84px;max-width:620px;margin:6px auto;border:3px dashed #c8b5f8;border-radius:18px;padding:10px;
+    display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;background:#fdfcff;}
+  .tray-empty{color:#8a7fb5;font-size:15px;}
+  .tray-row{display:flex;flex-wrap:wrap;justify-content:center;padding-right:12px;}
+  .tray .bill{width:60px;height:32px;font-size:12px;margin-right:-12px;border-width:2px;animation:pop .25s ease;}
+  .reading{font-size:clamp(17px,4vw,21px);font-weight:700;margin:6px 0 0;}
+  .go-btn{border:0;border-radius:16px;padding:12px 26px;font-size:19px;font-weight:800;color:#fff;
+    background:linear-gradient(90deg,#34d399,#10b981);box-shadow:0 5px 0 #059669;margin-top:10px;}
+  .go-btn:active{transform:translateY(3px);box-shadow:0 2px 0 #059669;}
+  .scale{position:relative;width:min(440px,100%);height:150px;margin:4px auto 0;}
+  .scale .beam{position:absolute;left:14%;right:14%;top:30px;height:9px;background:var(--purple);border-radius:6px;}
+  .scale .post{position:absolute;left:50%;top:34px;bottom:14px;width:10px;margin-left:-5px;background:#7c3aed;border-radius:6px;}
+  .scale .foot{position:absolute;left:50%;bottom:0;width:110px;margin-left:-55px;height:18px;background:#7c3aed;border-radius:12px 12px 6px 6px;}
+  .scale .pivot{position:absolute;left:50%;top:24px;width:20px;height:20px;margin-left:-10px;border-radius:50%;background:#fbbf24;border:3px solid #fff;z-index:2;}
+  .scale .pan{position:absolute;top:38px;width:clamp(120px,34vw,160px);display:flex;flex-direction:column;align-items:center;}
+  .scale .pan.l{left:14%;transform:translateX(-50%);}
+  .scale .pan.r{right:14%;transform:translateX(50%);}
+  .scale .strings{width:76%;height:56px;border:2px solid #a78bfa;border-bottom:0;border-radius:50% 50% 0 0/40% 40% 0 0;display:flex;align-items:flex-end;justify-content:center;}
+  .scale .load{background:#fff;border:3px solid #c4b5fd;border-radius:12px;padding:2px 8px;margin-bottom:2px;font-size:clamp(15px,4.2vw,21px);font-weight:800;white-space:nowrap;}
+  .scale .plate{width:100%;height:12px;background:linear-gradient(180deg,#fde68a,#f59e0b);border-radius:0 0 50% 50%/0 0 100% 100%;}
+
+  /* ---------- Podul lui Calculo ---------- */
+  .robot{display:flex;align-items:center;justify-content:center;gap:12px;margin:4px auto 6px;flex-wrap:wrap;}
+  .robot-face{font-size:clamp(52px,14vw,72px);line-height:1;animation:bob 2.2s ease-in-out infinite;}
+  .robot-say{background:#eef2ff;border:3px solid #818cf8;border-radius:18px;padding:6px 16px;}
+  .robot-say small{display:block;font-size:14px;font-weight:600;color:#6366f1;}
+  .robot-say .eq{margin:0;}
+  .robot-say .riddle{font-size:clamp(17px,4.2vw,22px);font-weight:700;max-width:420px;}
+  .house{width:min(360px,100%);margin:6px auto 0;}
+  .roof{position:relative;height:clamp(110px,28vw,140px);background:linear-gradient(180deg,#fb7185,#e11d48);clip-path:polygon(50% 0,100% 100%,0 100%);}
+  .rn{position:absolute;transform:translate(-50%,-50%);background:#fff;border:4px solid var(--kc);color:var(--kc);
+    border-radius:999px;padding:2px 12px;font-size:clamp(18px,5vw,26px);font-weight:800;min-width:2.4em;text-align:center;}
+  .rn.pos-s{left:50%;top:52%;} .rn.pos-a{left:30%;top:82%;} .rn.pos-b{left:70%;top:82%;}
+  .walls{height:46px;background:linear-gradient(180deg,#fef3c7,#fde68a);border:4px solid #f59e0b;border-top:0;border-radius:0 0 14px 14px;
+    display:flex;align-items:center;justify-content:center;font-size:30px;}
+  .shapes-area{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:560px;margin:8px auto;padding:12px;border-radius:20px;
+    background:linear-gradient(180deg,#fef3c7,#fde68a);border:3px solid #f59e0b;}
+  .shape-btn{border:3px solid transparent;background:#fff;border-radius:16px;padding:6px;box-shadow:0 4px 0 rgba(0,0,0,.08);line-height:0;}
+  .shape-btn:hover:not(:disabled){border-color:var(--pink);}
+  .shape-btn.correct{border-color:var(--green);background:#d7fbe8;animation:pop .3s ease;}
+  .shape-btn.wrong{border-color:#e23e8c;background:#ffe0e6;animation:shake-x .4s ease;}
+  .shape-big{display:inline-block;padding:12px;border-radius:22px;background:#fff7ed;border:3px solid #fed7aa;line-height:0;}
+  .counter{display:inline-block;margin-top:4px;font-weight:800;background:#f1ecff;border-radius:999px;padding:4px 14px;}
+
+  /* ---------- Livada ---------- */
+  .branches{display:flex;flex-direction:column;align-items:center;gap:10px;margin:8px auto;}
+  .branch{display:flex;align-items:flex-end;gap:2px;padding:0 10px 4px 6px;border-bottom:9px solid #92400e;border-radius:0 0 26px 6px;font-size:clamp(24px,6.4vw,32px);line-height:1;animation:pop .4s ease backwards;}
+  .branch .lf{font-size:.8em;}
+  .baskets{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:22px 12px;margin:22px auto 6px;max-width:680px;}
+  .basket{position:relative;display:grid;gap:1px 2px;justify-content:center;align-content:center;
+    min-width:clamp(78px,21vw,104px);min-height:clamp(60px,15vw,74px);padding:8px 8px 10px;
+    background:repeating-linear-gradient(90deg,#fcd9a0 0 8px,#f8c77c 8px 16px);
+    border:4px solid #d97706;border-radius:12px 12px 30px 30px;box-shadow:0 5px 0 #b45309;
+    font-size:clamp(16px,4.4vw,22px);line-height:1.15;animation:pop .4s ease backwards;}
+  .basket::before{content:"";position:absolute;left:18%;right:18%;top:-22px;height:24px;border:5px solid #b45309;border-bottom:0;border-radius:40px 40px 0 0;}
+  .basket .gone{opacity:.25;filter:grayscale(1);}
+  .stones{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px;margin:10px auto;max-width:660px;}
+  .stone{width:clamp(50px,13vw,64px);height:clamp(42px,11vw,52px);border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:clamp(17px,4.4vw,22px);background:radial-gradient(circle at 35% 30%,#fafaf9,#d6d3d1 60%,#a8a29e);box-shadow:0 4px 0 #78716c;}
+  .stone.q{background:#ffe1f0;color:#be185d;border:3px dashed #ec4899;box-shadow:none;}
+  .stone.q.cur{animation:nd-pulse 1s ease-in-out infinite;border-style:solid;}
+  .stone.ok{background:#d7fbe8;color:#065f46;border:3px solid var(--green);animation:pop .3s ease;}
+  .hopl{font-size:12px;font-weight:800;color:#7c3aed;}
+  .orchard{display:inline-flex;flex-direction:column;gap:4px;padding:10px 14px;border-radius:20px;background:linear-gradient(180deg,#d9f99d,#bef264);border:4px solid #65a30d;margin:6px auto;}
+  .orchard div{display:flex;gap:clamp(2px,1vw,6px);justify-content:center;font-size:clamp(22px,6vw,32px);line-height:1.1;}
+
+  /* ---------- Ecrane de poveste ---------- */
+  .ov{position:fixed;inset:0;z-index:55;display:flex;align-items:center;justify-content:center;padding:14px;
+    background:rgba(59,43,87,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);}
+  .ov-card{background:#fff;border-radius:28px;max-width:560px;width:100%;max-height:calc(100vh - 28px);overflow:auto;padding:20px 18px 22px;
+    text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3);animation:pop .35s ease;}
+  .ov-card .hero{width:clamp(120px,34vw,160px);height:clamp(120px,34vw,160px);border-radius:50%;object-fit:cover;border:6px solid #fde68a;
+    box-shadow:0 8px 20px rgba(180,83,9,.25);animation:bob 2.6s ease-in-out infinite;}
+  .ov-card .photo{display:block;width:100%;border-radius:20px;border:5px solid #fde68a;}
+  .ov-card h2{margin:10px 0 6px;font-size:clamp(22px,5.6vw,30px);color:#b45309;}
+  .ov-card p{margin:8px 0;font-size:clamp(16px,3.9vw,19px);line-height:1.5;}
+  .ov-card .big-gift{font-size:64px;line-height:1;animation:jump .9s ease;}
+  .trail{display:flex;justify-content:center;align-items:center;gap:4px;flex-wrap:wrap;font-size:clamp(20px,5vw,26px);margin:8px 0;}
+  .trail span.arr{font-size:16px;color:#a78bfa;}
+  .ov-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px;}
+  .alt-btn{display:inline-flex;align-items:center;border:3px solid #e6e0ff;border-radius:16px;padding:10px 18px;font-size:16px;font-weight:700;background:#fff;text-decoration:none;color:var(--purple);}
+  .diploma{margin-top:12px;border:5px double #f59e0b;background:#fffbeb;border-radius:18px;padding:12px;}
+  .diploma h3{margin:0 0 4px;font-size:22px;color:#b45309;letter-spacing:1px;}
+
+  /* ---------- Capi înoată (la fiecare 10 stele) ---------- */
+  .swim-layer{position:fixed;inset:0;z-index:48;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .5s;}
+  .swim-layer.on{opacity:1;}
+  .swim-water{position:absolute;inset:0;background:linear-gradient(180deg,rgba(56,189,248,0) 34%,rgba(56,189,248,.16) 60%,rgba(14,165,233,.26) 100%);}
+  .swimmer{position:absolute;top:40%;left:0;width:130px;height:130px;animation:swim-across 10s linear forwards,swim-bob 1.1s ease-in-out infinite;}
+  .swimmer img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:5px solid #fff;box-shadow:0 6px 16px rgba(0,0,0,.25);}
+  .swimmer .orange{position:absolute;top:-30px;left:50%;transform:translateX(-50%);font-size:42px;}
+  .swimmer .splash{position:absolute;left:-14%;right:-14%;bottom:-12px;height:34px;border-radius:50%;background:rgba(255,255,255,.65);}
+  @keyframes swim-across{from{transform:translateX(-26vw)}to{transform:translateX(126vw)}}
+  @keyframes swim-bob{0%,100%{margin-top:0}50%{margin-top:-12px}}
+
+  /* Cer cu nori */
+  .sky{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;}
+  .cloud-wrap{position:absolute;left:0;animation:drift linear infinite;will-change:transform;}
+  .cloud{position:relative;width:130px;height:42px;background:#fff;border-radius:42px;opacity:.85;filter:blur(1px);}
+  .cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%;}
+  .cloud::before{width:58px;height:58px;top:-26px;left:20px;}
+  .cloud::after{width:42px;height:42px;top:-18px;left:66px;}
+  @keyframes drift{from{transform:translateX(-35vw)}to{transform:translateX(135vw)}}
+  .confetti-layer{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:58;}
+  .confetti-piece{position:absolute;top:-24px;width:11px;height:15px;border-radius:2px;animation:fall linear forwards;}
+  @keyframes fall{0%{transform:translateY(-24px) rotate(0);opacity:1}100%{transform:translateY(105vh) rotate(720deg);opacity:.9}}
+  /* Desktop: harta-portret în stânga, cât ecranul de înaltă (rămâne pe loc la derulare), provocările în dreapta */
+  @media(min-width:1000px){
+    .wrap{max-width:1440px;}
+    .layout{--maph:clamp(480px,100vh - 150px,1100px);display:grid;grid-template-columns:calc(var(--maph) * .6 + 22px) minmax(0,1fr);
+      gap:18px;align-items:start;}
+    .side{position:sticky;top:12px;}
+    .side .map-wrap{max-width:none;}
+    .zoom-btn{display:none;}
+  }
+  @media(max-width:520px){
+    .speech-row{flex-wrap:wrap;}
+    .bag{flex:1 1 100%;flex-direction:row;justify-content:center;}
+    header{flex-wrap:wrap;}
+    .top-actions{margin-left:auto;}
+    .ans,.tile{min-width:60px;padding:8px 10px;}
+    .scale .beam{left:20%;right:20%;}
+    .scale .pan.l{left:20%;} .scale .pan.r{right:20%;}
+  }
+</style>
+</head>
+<body>
+<div class="sky" aria-hidden="true">
+  <div class="cloud-wrap" style="top:5%;animation-duration:78s;animation-delay:-6s"><div class="cloud" style="transform:scale(1.1);opacity:.9"></div></div>
+  <div class="cloud-wrap" style="top:22%;animation-duration:110s;animation-delay:-55s"><div class="cloud" style="transform:scale(.6);opacity:.72"></div></div>
+  <div class="cloud-wrap" style="top:45%;animation-duration:125s;animation-delay:-85s"><div class="cloud" style="transform:scale(.5);opacity:.68"></div></div>
+  <div class="cloud-wrap" style="top:70%;animation-duration:84s;animation-delay:-63s"><div class="cloud" style="transform:scale(1.2);opacity:.85"></div></div>
+</div>
+<div class="wrap">
+  <header>
+    <a href="rebe.html">← Jocurile lui Rebe</a>
+    <h1>🐾 Aventura lui Capi</h1>
+    <div class="top-actions">
+      <div class="stars" aria-label="Stele câștigate">⭐ <span id="starCount">0</span></div>
+      <button class="mute-btn" id="muteBtn" type="button" aria-label="Oprește sunetul">🔊</button>
+    </div>
+  </header>
+
+  <div class="layout">
+  <div class="side">
+  <section class="mapcard" aria-label="Harta aventurii">
+    <div class="map-top">
+      <span class="chapter-badge" id="chapterBadge">🌳 Pădurea Numerelor</span>
+      <span class="progress"><span id="progressText">0 / 50</span><span class="progress-bar"><span class="progress-fill" id="progressFill"></span></span></span>
+      <button class="zoom-btn" id="zoomBtn" type="button">🗺️ Toată harta</button>
+    </div>
+    <div class="map-wrap" id="mapWrap">
+      <svg id="map" viewBox="0 0 600 1000" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Drumul lui Capi de acasă până la Izvorul cald">
+        <defs>
+          <linearGradient id="gMeadow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9f99d"/><stop offset="1" stop-color="#ecfccb"/></linearGradient>
+          <linearGradient id="gCanyon" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c2410c"/><stop offset=".5" stop-color="#7c2d12"/><stop offset="1" stop-color="#c2410c"/></linearGradient>
+          <linearGradient id="gMount" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a8a29e"/><stop offset="1" stop-color="#d6d3d1"/></linearGradient>
+          <radialGradient id="gSpring"><stop offset="0" stop-color="#cffafe"/><stop offset="1" stop-color="#22d3ee"/></radialGradient>
+          <clipPath id="capiClip"><circle r="30"/></clipPath>
+        </defs>
+        <rect width="600" height="1000" fill="url(#gMeadow)"/>
+        <!-- livada (sus) și pădurea (jos) -->
+        <path d="M0 0 H600 V244 L0 244 Z" fill="#bbf7d0" opacity=".85"/>
+        <path d="M0 818 C150 836 320 806 600 790 V1000 H0 Z" fill="#86efac" opacity=".6"/>
+        <!-- muntele -->
+        <polygon points="-10,770 60,615 110,632 200,540 300,450 370,515 430,495 530,585 610,630 610,720 -10,820" fill="url(#gMount)"/>
+        <polygon points="300,450 370,515 430,495 530,585 610,630 610,720 330,740 340,580" fill="#78716c" opacity=".3"/>
+        <polygon points="272,492 300,450 330,486 316,478 302,494 287,481" fill="#fff"/>
+        <!-- râul -->
+        <path d="M-40 795 C130 818 230 718 330 722 C440 727 500 660 660 636" fill="none" stroke="#38bdf8" stroke-width="92" stroke-linecap="round"/>
+        <path d="M-40 795 C130 818 230 718 330 722 C440 727 500 660 660 636" fill="none" stroke="#7dd3fc" stroke-width="64" stroke-linecap="round"/>
+        <path class="river-flow" d="M-40 795 C130 818 230 718 330 722 C440 727 500 660 660 636" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="14 22" opacity=".7"/>
+        <!-- prăpastia -->
+        <path d="M-10 236 L120 246 L230 234 L360 248 L470 236 L610 244 L610 420 L500 430 L380 416 L260 432 L140 420 L-10 430 Z" fill="url(#gCanyon)"/>
+        <!-- izvorul cald -->
+        <ellipse cx="300" cy="66" rx="82" ry="36" fill="#a8a29e"/>
+        <ellipse cx="300" cy="64" rx="72" ry="28" fill="url(#gSpring)"/>
+        <g id="springOranges" opacity="0">
+          <text class="deco" x="262" y="62" font-size="18">🍊</text>
+          <text class="deco" x="340" y="56" font-size="18">🍊</text>
+          <text class="deco" x="342" y="76" font-size="16">🍊</text>
+        </g>
+        <!-- decor -->
+        <g class="deco-g" id="decor"></g>
+        <!-- etichete -->
+        <text class="lbl" x="118" y="76">♨️ Izvorul cald</text>
+        <text class="lbl" x="330" y="200">Livada Înmulțirii</text>
+        <text class="lbl" x="150" y="290" style="fill:#fff;stroke:#7c2d12">Podul lui Calculo</text>
+        <text class="lbl" x="175" y="700">Muntele Sutelor</text>
+        <text class="lbl" x="455" y="790">Râul Adunărilor</text>
+        <text class="lbl" x="330" y="930">Pădurea Numerelor</text>
+        <text class="lbl" x="45" y="996" style="font-size:16px">Acasă</text>
+        <!-- podul: frânghii și stâlpi -->
+        <g id="bridge">
+          <path d="M110 440 Q330 382 490 230" transform="translate(-8 -13)" fill="none" stroke="#78350f" stroke-width="3"/>
+          <path d="M110 440 Q330 382 490 230" transform="translate(8 13)" fill="none" stroke="#78350f" stroke-width="3"/>
+          <rect x="98" y="413" width="8" height="24" rx="3" fill="#78350f"/>
+          <rect x="114" y="439" width="8" height="24" rx="3" fill="#78350f"/>
+          <rect x="478" y="203" width="8" height="24" rx="3" fill="#78350f"/>
+          <rect x="494" y="229" width="8" height="24" rx="3" fill="#78350f"/>
+        </g>
+        <g id="route"></g>
+        <g id="planks"></g>
+        <g id="dots"></g>
+        <g id="gifts"></g>
+        <g id="capi">
+          <g id="capiBob">
+            <ellipse class="capi-shadow" cx="0" cy="33" rx="24" ry="6"/>
+            <ellipse class="capi-ripple" cx="0" cy="29" rx="44" ry="11"/>
+            <g id="capiFlip">
+              <circle r="34" fill="#fff" stroke="#f59e0b" stroke-width="3"/>
+              <image href="capi.jpg" x="-30" y="-30" width="60" height="60" clip-path="url(#capiClip)" preserveAspectRatio="xMidYMid slice"/>
+            </g>
+          </g>
+        </g>
+      </svg>
+    </div>
+  </section>
+  </div>
+
+  <div class="main-col">
+  <div class="speech-row">
+    <img class="capi-face" id="capiFace" src="capi-fata.jpg" alt="Capi, capibara">
+    <div class="speech" id="speech" role="status" aria-live="polite">Bună, Rebe! Sunt Capi, capibara. 🐾</div>
+    <div class="bag" id="bag" aria-label="Rucsacul lui Capi"></div>
+  </div>
+
+  <main class="panel">
+    <h2 id="panelTitle"></h2>
+    <div class="question" id="question"></div>
+    <div id="visual"></div>
+    <div id="activity"></div>
+    <div class="controls">
+      <button class="hint-btn" id="hintBtn" type="button" aria-expanded="false">💡 Indiciu</button>
+    </div>
+    <div class="hint-box" id="hintBox" hidden></div>
+  </main>
+  </div>
+  </div>
+  <footer>
+    Făcut cu drag pentru Rebe 💖<br>
+    Poze de pe Wikimedia Commons, licență <a href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="noopener">CC BY 2.0</a>:
+    <a href="https://commons.wikimedia.org/wiki/File:Capybara_portrait.jpg" target="_blank" rel="noopener">„Capybara portrait”</a> de Karoly Lorentey (decupată) și
+    <a href="https://commons.wikimedia.org/wiki/File:Capybara_Izu_Shaboten_001.jpg" target="_blank" rel="noopener">„Capybara Izu Shaboten 001”</a> de Tatsuo Yamashita (yto).
+  </footer>
+</div>
+<div class="ov" id="ov" hidden><div class="ov-card" id="ovCard" role="dialog" aria-modal="true"></div></div>
+<div class="confetti-layer" id="confetti" aria-hidden="true"></div>
+<div class="swim-layer" id="swimLayer" aria-hidden="true">
+  <div class="swim-water"></div>
+  <div class="swimmer"><span class="splash"></span><img src="capi.jpg" alt=""><span class="orange">🍊</span></div>
+</div>
+<script src="rebe-bonus.js"></script>
+<script>
+(function(){
+  'use strict';
+  function $(id){return document.getElementById(id);}
+  var question=$('question'), visual=$('visual'), activity=$('activity'), speech=$('speech');
+  var hintBox=$('hintBox'), hintBtn=$('hintBtn'), starCount=$('starCount'), panelTitle=$('panelTitle');
+  var confettiLayer=$('confetti'), muteBtn=$('muteBtn'), swimLayer=$('swimLayer'), ov=$('ov'), ovCard=$('ovCard');
+  var mapWrap=$('mapWrap'), map=$('map'), zoomBtn=$('zoomBtn'), chapterBadge=$('chapterBadge');
+  var progressText=$('progressText'), progressFill=$('progressFill'), bag=$('bag'), capiFace=$('capiFace');
+  var capiG=$('capi'), capiFlip=$('capiFlip');
+  var NS='http://www.w3.org/2000/svg';
+  var TOTAL=50, PER=10, SWIM_EVERY=10;
+  var MINUS='−', MUL='×';
+  var CONFETTI_COLORS=['#ff5ea8','#8b5cf6','#38bdf8','#34d399','#fbbf24','#fb923c','#f472b6'];
+  var PRAISE=['Mulțumesc, Rebe! Încă un pas! 🐾','Bravo! Mergem mai departe! ⭐','Super! Capi e tare fericită! 💖',
+    'Ce isteață ești! 🌟','Hop-hop, încă un pas spre izvor! ♨️','Corect! Capi dă din urechi de bucurie! 🎉'];
+
+  var stars=Number(localStorage.getItem('rebe_stars'))||0;
+  var muted=localStorage.getItem('rebe_muted')==='1';
+  var pos=Number(localStorage.getItem('rebe8_pos'))||0;
+  if(!Number.isInteger(pos) || pos<0 || pos>TOTAL) pos=0;
+  var firstTry=Number(localStorage.getItem('rebe8_first'))||0;
+  var advStars=Number(localStorage.getItem('rebe8_stars'))||0;
+  var locked=true, keyHandler=null, nextTimer=null, audio=null, hint='', mistakes=0, zoomPref=null;
+
+  // ---------- Capitolele aventurii ----------
+  var CH=[
+    {name:'Pădurea Numerelor',icon:'🌳',gift:'🌰',giftName:'o ghindă norocoasă',
+     intro:'Prima oprire: Pădurea Numerelor! Aici numărăm, comparăm, ordonăm și rotunjim numere până la 1000.',
+     done:'Capi a ieșit din Pădurea Numerelor!',
+     rules:['🔢 Un număr de trei cifre are sute, zeci și unități: 347 = 3 sute, 4 zeci și 7 unități.',
+       '⚖️ Comparăm întâi sutele, apoi zecile, apoi unitățile.',
+       '📈 Crescător = de la mic la mare. 📉 Descrescător = de la mare la mic.',
+       '🎯 La zeci: dacă unitățile sunt 0–4, alegem zecea mai mică; dacă sunt 5–9, zecea mai mare.',
+       '💯 La sute: sub 50 alegem suta mai mică; de la 50 în sus, suta mai mare.']},
+    {name:'Râul Adunărilor',icon:'🌊',gift:'🐚',giftName:'o scoică strălucitoare',
+     intro:'Capibarele sunt înotătoare grozave! Capi traversează râul, dar fiecare val aduce o socoteală până la 100.',
+     done:'Capi a traversat Râul Adunărilor înot!',
+     rules:['➕ Adunarea: termen + termen = sumă.','➖ Scăderea: descăzut − scăzător = diferență.',
+       '🧮 Socotim întâi unitățile, apoi zecile.',
+       '⭐ Termenul necunoscut = suma − termenul cunoscut.',
+       '⭐ Descăzutul = diferența + scăzătorul. Scăzătorul = descăzutul − diferența.']},
+    {name:'Muntele Sutelor',icon:'⛰️',gift:'💎',giftName:'un cristal de munte',
+     intro:'Acum urcăm pe Muntele Sutelor: adunări și scăderi până la 1000, în coloană și la cumpărături!',
+     done:'Capi a trecut peste Muntele Sutelor!',
+     rules:['✏️ În coloană: unități sub unități, zeci sub zeci, sute sub sute. Începem cu unitățile.',
+       '➕ Dacă la o coloană trecem de 9, scriem unitățile și ținem 1 în minte.',
+       '➖ Dacă nu putem scădea, împrumutăm 1 de la cifra din stânga.',
+       '💰 „În total” înseamnă adunare. „Rămân” înseamnă scădere.']},
+    {name:'Podul lui Calculo',icon:'🌉',gift:'⚙️',giftName:'rotița lui Calculo',
+     intro:'Robotul Calculo a scos scândurile podului! Fiecare răspuns corect pune o scândură la loc. Facem proba și recunoaștem formele.',
+     done:'Podul e gata și Capi l-a trecut! Calculo e prietenul nostru acum.',
+     rules:['➕ Proba adunării prin scădere: din sumă scădem un termen → obținem celălalt termen.',
+       '➕ Proba adunării prin adunare: schimbăm locul termenilor → obținem aceeași sumă.',
+       '➖ Proba scăderii prin adunare: diferența + scăzătorul → obținem descăzutul.',
+       '➖ Proba scăderii prin scădere: descăzutul − diferența → obținem scăzătorul.',
+       '🔺 Triunghiul are 3 laturi. Pătratul are 4 laturi egale. Dreptunghiul are 2 laturi lungi și 2 scurte. Cercul nu are colțuri.']},
+    {name:'Livada Înmulțirii',icon:'🍊',gift:'🍊',giftName:'cea mai frumoasă portocală',
+     intro:'Am ajuns în Livada Înmulțirii! Numărăm portocalele repede, cu înmulțirea. Izvorul cald e foarte aproape!',
+     done:'Capi a adunat portocalele din livadă!',
+     rules:['➕ Adunarea repetată de termeni egali se scrie ca înmulțire: 5 + 5 + 5 = 3 × 5.',
+       '🔤 În 3 × 5 = 15, numerele 3 și 5 sunt factorii, iar 15 este produsul.',
+       '🔄 Dacă schimbăm factorii între ei, produsul nu se schimbă: 3 × 5 = 5 × 3.',
+       '1️⃣ Un număr înmulțit cu 1 rămâne același. 0️⃣ Orice număr înmulțit cu 0 dă 0.']}
+  ];
+
+  // ---------- Utile ----------
+  function rand(lo,hi){return lo+Math.floor(Math.random()*(hi-lo+1));}
+  function choice(a){return a[rand(0,a.length-1)];}
+  function shuffle(items){
+    for(var i=items.length-1;i>0;i--){var j=rand(0,i);var t=items[i];items[i]=items[j];items[j]=t;}
+    return items;
+  }
+  function el(tag,cls,text){
+    var n=document.createElement(tag);
+    if(cls) n.className=cls;
+    if(text!=null) n.textContent=text;
+    return n;
+  }
+  function btn(cls,text,onClick){
+    var b=el('button',cls,text);
+    b.type='button';
+    b.addEventListener('click',onClick);
+    return b;
+  }
+  function svgEl(tag,attrs,parent){
+    var n=document.createElementNS(NS,tag);
+    for(var k in attrs) n.setAttribute(k,attrs[k]);
+    if(parent) parent.appendChild(n);
+    return n;
+  }
+  function sym(op){return op==='-'?MINUS:op==='*'?MUL:'+';}
+  function calc(a,op,b){return op==='+'?a+b:op==='-'?a-b:a*b;}
+  function mul(a,b){return a+' '+MUL+' '+b;}
+  function rep(n,times){var a=[];for(var i=0;i<times;i++) a.push(n);return a.join(' + ');}
+  function digitAt(n,q){return Math.floor(n/Math.pow(10,q))%10;}
+  function carries(a,b){var c=0,n=0;for(var q=0;q<4;q++){var s=digitAt(a,q)+digitAt(b,q)+c;c=s>=10?1:0;n+=c;}return n;}
+  function borrows(a,b){var c=0,n=0;for(var q=0;q<4;q++){var d=digitAt(a,q)-c-digitAt(b,q);c=d<0?1:0;n+=c;}return n;}
+  // generează până când condiția e îndeplinită
+  function pick(gen,ok){var o;for(var t=0;t<3000;t++){o=gen();if(ok(o)) return o;}return o;}
+  // „20 de mere”, dar „12 mere”, „105 lei”
+  function de(n,noun){var r=n%100;return n+((r===0&&n>0)||r>=20?' de ':' ')+noun;}
+  function lei(n){return n===1?'1 leu':de(n,'lei');}
+  function cnt(n,one,many){return n===1?'1 '+one:n+' '+many;}
+  function uniq(a){return a.filter(function(v,i){return a.indexOf(v)===i;});}
+  function numberOptions(v,deltas,lo,hi){
+    var set=[v];
+    shuffle((deltas||[1,-1,10,-10,2,-2,100,-100]).slice()).forEach(function(d){
+      var c=v+d;
+      if(set.length<4 && c>=(lo==null?0:lo) && c<=(hi||1000) && set.indexOf(c)<0) set.push(c);
+    });
+    return shuffle(set);
+  }
+  function numChoices(v,why,deltas,lo,hi){
+    return numberOptions(v,deltas,lo,hi).map(function(n){return {label:String(n),ok:n===v,why:typeof why==='function'?why(n):why};});
+  }
+
+  // ---------- Sunet ----------
+  function tone(freq,dur,type,vol,delay){
+    if(muted) return;
+    var AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC) return;
+    if(!audio) audio=new AC();
+    if(audio.state==='suspended') audio.resume();
+    var t0=audio.currentTime+(delay||0);
+    var o=audio.createOscillator(), g=audio.createGain();
+    o.type=type||'sine';
+    o.frequency.value=freq;
+    o.connect(g);g.connect(audio.destination);
+    g.gain.setValueAtTime(vol||0.15,t0);
+    g.gain.exponentialRampToValueAtTime(0.001,t0+dur);
+    o.start(t0);o.stop(t0+dur+0.01);
+  }
+  function beep(correct){tone(correct?660:280,0.2);}
+  function tick(){tone(560,0.07,'triangle',0.08);}
+  function boing(){tone(330,0.08,'sine',0.12);tone(520,0.12,'sine',0.12,0.07);}
+  function fanfare(){[523,659,784,1047].forEach(function(f,i){tone(f,0.18,'triangle',0.12,i*0.11);});}
+  function bigFanfare(){[523,659,784,1047,784,1047,1319].forEach(function(f,i){tone(f,0.22,'triangle',0.12,i*0.13);});}
+
+  // ---------- Capi vorbește ----------
+  function say(text){
+    speech.textContent=text;
+    speech.style.animation='none';
+    void speech.offsetWidth;
+    speech.style.animation='';
+  }
+  function capiState(cls,ms){
+    [capiG,capiFace].forEach(function(n){
+      n.classList.remove('happy','oops');
+      void n.getBoundingClientRect();
+      n.classList.add(cls);
+    });
+    setTimeout(function(){capiG.classList.remove(cls);capiFace.classList.remove(cls);},ms);
+  }
+
+  // ---------- Harta ----------
+  // câte un segment de drum pentru fiecare capitol; câte 10 opriri pe fiecare
+  var SEGS=[
+    'M110 952 C260 985 470 968 505 928 C538 890 340 884 240 874 C140 864 62 858 60 795',
+    'M60 795 C150 808 235 722 330 721 C430 720 500 672 545 640 C555 630 560 615 560 598',
+    'M560 598 C480 610 280 640 180 615 C100 595 110 560 190 552 C290 542 420 565 445 528 C465 505 370 488 300 482 C230 476 140 474 110 440',
+    'M110 440 Q330 382 490 230',
+    'M490 230 C420 252 210 256 120 230 C45 208 60 160 140 150 C240 138 400 162 470 142 C540 122 530 82 450 76 C400 72 350 68 300 64'
+  ];
+  var DECOR=[
+    ['🏡',40,955,34],['🌲',30,880,26],['🌳',192,918,28],['🌲',560,975,26],['🌳',560,860,28],['🍄',578,925,20],['🌲',230,990,22],
+    ['🦆',440,735,24],['🐟',170,795,20],['🪷',300,752,22],
+    ['🚩',306,438,22],['🐐',330,588,22],['🦅',505,468,22],['🌲',575,680,22],
+    ['🤖',545,200,34],['🦋',230,110,20],
+    ['🌳',560,105,30],['🍊',554,98,13],['🌳',30,110,28],['🍊',24,103,13],
+    ['🌳',200,194,26],['🍊',206,186,12],['♨️',400,30,26]
+  ];
+  var segEls=[], segLen=[], dotEls=[], plankEls=[], giftEls=[], curT=pos, facing=1, bagCount=-1;
+  (function buildMap(){
+    var routeG=$('route'), dotsG=$('dots'), planksG=$('planks'), giftsG=$('gifts'), decor=$('decor');
+    DECOR.forEach(function(d){svgEl('text',{class:'deco',x:d[1],y:d[2],'font-size':d[3]},decor).textContent=d[0];});
+    SEGS.forEach(function(d,i){
+      if(i!==1 && i!==3) svgEl('path',{d:d,class:'route-bg'},routeG);
+      var p=svgEl('path',{d:d,class:'route r'+i},routeG);
+      segEls.push(p);
+      segLen.push(p.getTotalLength());
+    });
+    var start=posAt(0);
+    svgEl('circle',{cx:start.x,cy:start.y,r:8,class:'dot done'},dotsG);
+    for(var i=1;i<=TOTAL;i++){
+      var p=posAt(i);
+      if(i>30 && i<=40){
+        var a=posAt(i-0.2), b=posAt(Math.min(40,i+0.2));
+        var ang=Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
+        var pg=svgEl('g',{transform:'translate('+p.x.toFixed(1)+' '+p.y.toFixed(1)+') rotate('+ang.toFixed(1)+')'},planksG);
+        plankEls[i]=svgEl('rect',{x:-9,y:-17,width:18,height:34,rx:3,class:'plank'},pg);
+      } else {
+        dotEls[i]=svgEl('circle',{cx:p.x,cy:p.y,r:i%PER===0?11:8,class:'dot'},dotsG);
+      }
+      if(i%PER===0 && i<TOTAL){
+        var g=svgEl('text',{class:'gift',x:p.x+(p.x>450?-30:30),y:p.y+4},giftsG);
+        g.textContent=CH[i/PER-1].gift;
+        giftEls[i]=g;
+      }
+    }
+  })();
+  function posAt(t){
+    t=Math.max(0,Math.min(TOTAL,t));
+    var c=Math.min(4,Math.floor(t/PER)), f=(t-c*PER)/PER;
+    return segEls[c].getPointAtLength(segLen[c]*f);
+  }
+  function chOf(i){return Math.min(4,Math.floor(i/PER));}
+  function renderMap(){
+    for(var i=1;i<=TOTAL;i++){
+      var n=dotEls[i]||plankEls[i];
+      n.classList.toggle('done',i<=pos);
+      n.classList.toggle('next',i===pos+1);
+      if(giftEls[i]) giftEls[i].classList.toggle('todo',i>pos);
+    }
+    $('springOranges').setAttribute('opacity',pos>=TOTAL?'1':'0');
+    var c=chOf(Math.min(pos,TOTAL-1));
+    chapterBadge.textContent=pos>=TOTAL?'♨️ Izvorul cald':CH[c].icon+' '+CH[c].name;
+    progressText.textContent=pos+' / '+TOTAL;
+    progressFill.style.width=(pos/TOTAL*100)+'%';
+    var earned=Math.floor(pos/PER), items=el('span','bag-items');
+    CH.forEach(function(ch,k){
+      var s=el('span','g'+(k<earned?'':' todo')+(k===earned-1 && bagCount>=0 && earned>bagCount?' new':''),ch.gift);
+      s.title=k<earned?ch.giftName:'Încă nu e în rucsac';
+      items.appendChild(s);
+    });
+    bag.replaceChildren(el('span','bag-title','🎒 Rucsacul lui Capi'),items);
+    bagCount=earned;
+  }
+  // pe desktop harta stă în stânga, întreagă; pe ecrane mici o urmărim pe Capi de aproape
+  var DESK=window.matchMedia('(min-width:1000px)');
+  function isZoom(){return DESK.matches?false:zoomPref!==null?zoomPref:true;}
+  function camera(x,y){
+    var z=isZoom();
+    mapWrap.classList.toggle('zoom',z);
+    zoomBtn.textContent=z?'🗺️ Toată harta':'🔍 Mai aproape';
+    if(!z){map.setAttribute('viewBox','0 0 600 1000');return;}
+    var h=450, vy=Math.max(0,Math.min(1000-h,y-h/2));
+    map.setAttribute('viewBox','0 '+vy.toFixed(1)+' 600 '+h);
+  }
+  function placeCapi(t){
+    var p=posAt(t), a=posAt(Math.max(0,t-0.08)), b=posAt(Math.min(TOTAL,t+0.08));
+    var dx=b.x-a.x;
+    if(Math.abs(dx)>0.5) facing=dx<0?-1:1;
+    capiG.setAttribute('transform','translate('+p.x.toFixed(1)+','+(p.y-26).toFixed(1)+')');
+    capiFlip.setAttribute('transform',facing<0?'scale(-1,1)':'scale(1,1)');
+    capiG.classList.toggle('swim',t>PER+0.02 && t<2*PER-0.02);
+    camera(p.x,p.y);
+  }
+  function walkTo(target,done){
+    var from=curT, start=null, dur=Math.max(700,Math.abs(target-from)*950);
+    capiG.classList.add('walking');
+    if(target>from+0.5 && target>PER && target<=2*PER) tone(300,0.12,'sine',0.06);
+    function frame(ts){
+      if(start===null) start=ts;
+      var k=Math.min(1,(ts-start)/dur);
+      var e=k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+      placeCapi(from+(target-from)*e);
+      if(k<1) requestAnimationFrame(frame);
+      else {curT=target;capiG.classList.remove('walking');if(done) done();}
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- Recompense ----------
+  function confetti(n){
+    for(var i=0;i<(n||22);i++){
+      var p=el('div','confetti-piece');
+      p.style.left=Math.random()*100+'vw';
+      p.style.background=choice(CONFETTI_COLORS);
+      var dur=1.1+Math.random()*0.9;
+      p.style.animationDuration=dur+'s';
+      p.style.animationDelay=(Math.random()*0.25)+'s';
+      confettiLayer.appendChild(p);
+      (function(node,ms){setTimeout(function(){node.remove();},ms);})(p,(dur+0.4)*1000);
+    }
+  }
+  function swim(){
+    var swimmer=swimLayer.querySelector('.swimmer');
+    swimmer.style.animation='none';
+    void swimmer.offsetWidth;
+    swimmer.style.animation='';
+    swimLayer.classList.add('on');
+    say('Bravo! Capi înoată de bucurie, cu o portocală pe cap! 🌊🍊');
+    clearTimeout(swim._t);
+    swim._t=setTimeout(function(){swimLayer.classList.remove('on');},10000);
+    setTimeout(function(){if(window.RebeBonus) RebeBonus.show(applyBonus);},10000);
+  }
+  function applyBonus(delta){
+    stars=Math.max(0,stars+delta);
+    localStorage.setItem('rebe_stars',String(stars));
+    starCount.textContent=stars;
+    return stars;
+  }
+  function addStar(){
+    stars++;advStars++;
+    localStorage.setItem('rebe_stars',String(stars));
+    localStorage.setItem('rebe8_stars',String(advStars));
+    starCount.textContent=stars;
+    var badge=starCount.parentNode;
+    badge.classList.remove('bump');void badge.offsetWidth;badge.classList.add('bump');
+    var plus=el('span','plus-star','+1 ⭐');
+    badge.appendChild(plus);
+    setTimeout(function(){plus.remove();},1100);
+    if(stars % SWIM_EVERY === 0) swim();
+  }
+  // un pas rezolvat dintr-o întrebare cu mai mulți pași
+  function step(text){
+    var all=activity.querySelectorAll('.step'), prev=all[all.length-1];
+    if(prev){prev.classList.add('done');addStar();tone(880,0.12,'triangle',0.1,0.08);}
+    var s=el('div','step');
+    s.appendChild(el('h3',null,text));
+    activity.appendChild(s);
+    return s;
+  }
+  function fail(msg){
+    mistakes++;
+    say(msg||'Mai încearcă! Poți folosi indiciul. 💪');
+    beep(false);
+    capiState('oops',500);
+  }
+  function solved(resultText){
+    locked=true;
+    keyHandler=null;
+    var all=activity.querySelectorAll('.step');
+    if(all.length) all[all.length-1].classList.add('done');
+    if(resultText) activity.appendChild(el('div','result-line',resultText));
+    if(mistakes===0){firstTry++;localStorage.setItem('rebe8_first',String(firstTry));}
+    addStar();
+    pos++;
+    localStorage.setItem('rebe8_pos',String(pos));
+    if(stars % SWIM_EVERY !== 0) say(choice(PRAISE));
+    beep(true);
+    confetti();
+    capiState('happy',700);
+    renderMap();
+    setTimeout(function(){walkTo(pos);},450);
+    var wait=pos%PER===0?3200:2800;
+    nextTimer=setTimeout(function(){
+      if(pos>=TOTAL) finale();
+      else if(pos%PER===0) chapterDone();
+      else startQuestion();
+    },wait);
+  }
+
+  // ---------- Răspunsuri ----------
+  // rând de variante; onRight(item) se apelează la alegerea corectă
+  function choices(container,items,onRight,o){
+    o=o||{};
+    var seen={}, list=[];
+    items.forEach(function(it){if(!seen[it.label]){seen[it.label]=1;list.push(it);}});
+    var row=el('div','answers');
+    (o.keep?list:shuffle(list)).forEach(function(it){
+      var b=btn('ans'+(o.wide?' wide':''),it.label,function(){
+        if(locked || b.disabled) return;
+        if(it.ok){
+          b.classList.add('correct');
+          row.querySelectorAll('button').forEach(function(x){x.disabled=true;});
+          tick();
+          onRight(it);
+        } else {
+          b.classList.add('wrong');
+          b.disabled=true;
+          fail(it.why);
+        }
+      });
+      if(it.sub) b.appendChild(el('small',null,it.sub));
+      row.appendChild(b);
+    });
+    container.appendChild(row);
+    return row;
+  }
+  // tastatură pentru un număr. Rezultatele directe se scriu normal, de la stânga la dreapta.
+  // Doar la calcule (rtl=true) scriem ca în coloană: întâi unitățile, apoi zecile, apoi sutele.
+  var ND_CLS=['pu','pt','ph'], ND_LETTER=['U','Z','S'];
+  var ND_GEN=['unităților','zecilor','sutelor'];
+  function numPad(container,slot,expected,onRight,wrongMsg,rtl){
+    var len=String(expected).length, typed=[], done=false, boxes=[];
+    var guide=el('div','nd-guide');
+    var pad=el('div','numpad');
+    slot.replaceChildren();
+    slot.classList.add('digits');
+    for(var i=len-1;i>=0;i--){
+      var b=el('span','nd '+ND_CLS[i]);
+      b.appendChild(el('b',null,'?'));
+      b.appendChild(el('i',null,ND_LETTER[i]));
+      slot.appendChild(b);
+      boxes[i]=b;
+    }
+    // ordinul (0 = unități) în care intră a k-a cifră tastată
+    function place(k){return rtl?k:len-1-k;}
+    function render(){
+      boxes.forEach(function(b,i){
+        var k=place(i);
+        b.firstChild.textContent=k<typed.length?String(typed[k]):'?';
+        b.classList.toggle('fill',k<typed.length);
+        b.classList.toggle('cur',!done && k===typed.length);
+      });
+      slot.classList.toggle('typing',typed.length>0);
+      guide.textContent=done?'':typed.length<len?'Scrie cifra '+ND_GEN[place(typed.length)]+' ✏️':'Gata? Apasă ✔';
+    }
+    function value(){return typed.reduce(function(s,d,k){return s+d*Math.pow(10,place(k));},0);}
+    function press(k){
+      if(locked || done) return;
+      if(k==='del'){typed.pop();render();return;}
+      if(k==='ok'){
+        if(typed.length<len){say('Mai scrie cifra '+ND_GEN[place(typed.length)]+'! 🔢');return;}
+        var v=value();
+        if(v===expected){
+          done=true;
+          keyHandler=null;
+          slot.classList.remove('typing');
+          slot.classList.add('ok');
+          pad.classList.add('off');
+          render();
+          tick();
+          onRight();
+        } else {
+          fail(wrongMsg(v));
+          slot.classList.remove('bad');void slot.offsetWidth;slot.classList.add('bad');
+          typed=[];render();
+        }
+        return;
+      }
+      if(typed.length>=len) return;
+      typed.push(Number(k));
+      tick();
+      render();
+    }
+    ['1','2','3','4','5','6','7','8','9','del','0','ok'].forEach(function(k){
+      var label=k==='del'?'⌫':k==='ok'?'✔':k;
+      var b=btn('key'+(k==='ok'?' ok':k==='del'?' del':''),label,function(){press(k);});
+      if(k==='del') b.setAttribute('aria-label','Șterge');
+      if(k==='ok') b.setAttribute('aria-label','Gata');
+      pad.appendChild(b);
+    });
+    container.appendChild(guide);
+    container.appendChild(pad);
+    keyHandler=function(e){
+      if(/^[0-9]$/.test(e.key)) press(e.key);
+      else if(e.key==='Backspace'){e.preventDefault();press('del');}
+      else if(e.key==='Enter'){e.preventDefault();press('ok');}
+    };
+    render();
+  }
+  // ---------- Egalități colorate ----------
+  function term(it){
+    var n=el('span','n'+(it.k?' k'+it.k:'')+(it.hl?' hl':''));
+    n.appendChild(it.v instanceof Node?it.v:el('span','v',String(it.v)));
+    if(it.l) n.appendChild(el('span','l',it.l));
+    return n;
+  }
+  function eqEl(items,cls){
+    var row=el('div','eq'+(cls?' '+cls:''));
+    items.forEach(function(it){row.appendChild(typeof it==='string'?el('span','o',it):term(it));});
+    return row;
+  }
+  function slotEl(){return el('span','v slot','?');}
+  function inCard(node,cls){var c=el('div','card '+cls);c.appendChild(node);return c;}
+  // adunări și scăderi cu numere de mai multe cifre = calcul (se scrie ca în coloană)
+  function isCalc(a,op,b){
+    if(op==='*') return false;
+    var r=calc(a,op,b);
+    return r>=10 && (a>=10 || b>=10) && !(a%100===0 && b%100===0);
+  }
+  function calcHelp(a,op,b,v,r){
+    if(op==='+'){
+      if(v===r-10 || v===r-100) return v+' nu e corect. Ai uitat să ții 1 în minte? 🤔';
+      if(v===a-b) return 'Atenție la semn: aici ADUNĂM! ➕';
+    } else {
+      if(v===r+10 || v===r+100) return v+' nu e corect. Ai uitat de împrumut? 🤔';
+      if(v===a+b) return 'Atenție la semn: aici SCĂDEM! ➖';
+    }
+    return v+' nu e corect. Socotește pe rând: întâi unitățile, apoi zecile'+(Math.max(a,b,r)>=100?', apoi sutele':'')+'. 🧮';
+  }
+  function mulHelp(a,b,v){
+    if(a===0 || b===0) return v+' nu e corect. Orice număr înmulțit cu 0 dă 0! 0️⃣';
+    if(a===1 || b===1) return v+' nu e corect. Când înmulțim cu 1, obținem chiar celălalt număr! 1️⃣';
+    if(v===a+b && v!==a*b) return 'Atenție: '+a+' + '+b+' = '+v+'. Noi înmulțim, nu adunăm! ✖️';
+    var s=[];for(var i=1;i<=Math.min(2,a-1);i++) s.push(b*i);
+    return v+' nu e corect. Numără din '+b+' în '+b+', de '+a+' ori: '+s.join(', ')+', … 🧮';
+  }
+  // „a op b = ?” cu tastatura; la calcule cifrele se scriu de la unități
+  // o = {card:'water', keys:['a','b','s'], into:element} – implicit egalitatea stă în imagine
+  function calcPad(container,a,op,b,onRight,o){
+    o=o||{};
+    var r=calc(a,op,b), slot=slotEl(), keys=o.keys||[];
+    var e=eqEl([{v:a,k:keys[0]},sym(op),{v:b,k:keys[1]},'=',{v:slot,k:keys[2]}],o.small?'small':null);
+    (o.into||visual).appendChild(o.card?inCard(e,o.card):e);
+    numPad(container,slot,r,onRight,function(v){
+      return op==='*'?mulHelp(a,b,v):calcHelp(a,op,b,v,r);
+    },isCalc(a,op,b));
+    return r;
+  }
+
+  // ---------- Calcul în coloană (cifrele se scriu de la unități) ----------
+  var PCLS=['pu','pt','ph'], PLACE=['unități','zeci','sute'], PLACE_LETTER=['U','Z','S'];
+  function columnSteps(x,op,y,W){
+    var steps=[],cin=0,yLen=String(y).length;
+    for(var q=0;q<W;q++){
+      var xd=digitAt(x,q),yd=digitAt(y,q),hasY=q<yLen,d,cout,txt,ask;
+      if(op==='+'){
+        var tot=xd+yd+cin;
+        d=tot%10;cout=tot>=10?1:0;
+        if(!hasY && !cin) ask=txt='Nu avem ce aduna: coborâm cifra '+xd+'.';
+        else {
+          var expr=xd+(hasY?' + '+yd:'')+(cin?' + 1 (ținut în minte)':'');
+          ask=expr+' = ?';
+          txt=expr+' = '+tot+(cout?' → scriem '+d+' și ținem 1 în minte.':'.');
+        }
+      } else {
+        var top=xd-cin,pre='';
+        if(cin && xd===0) pre='Aici era 0 și a dat 1 mai departe, așa că împrumută și el 1 din stânga: are acum 9. ';
+        else if(cin) pre='Am împrumutat 1 de aici, deci '+xd+' a devenit '+top+'. ';
+        if(top>=0 && top-yd<0){
+          d=top-yd+10;cout=1;
+          ask=pre+'Nu putem scădea '+yd+' din '+top+': împrumutăm 1 din stânga. '+(top+10)+' − '+yd+' = ?';
+          txt=pre+'Nu putem scădea '+yd+' din '+top+': împrumutăm 1 din stânga. '+(top+10)+' − '+yd+' = '+d+'.';
+        } else if(top<0){
+          d=9-yd;cout=1;
+          ask=pre+'9 − '+yd+' = ?';
+          txt=pre+'9 − '+yd+' = '+d+'.';
+        } else {
+          d=top-yd;cout=0;
+          if(hasY){ask=pre+top+' − '+yd+' = ?';txt=pre+top+' − '+yd+' = '+d+'.';}
+          else ask=txt=pre+(cin?'Scriem '+top+'.':'Nu avem ce scădea: coborâm cifra '+xd+'.');
+        }
+      }
+      steps.push({d:d,cout:cout,txt:txt,ask:ask});
+      cin=cout;
+    }
+    return steps;
+  }
+  function columnTask(container,x,op,y,onDone){
+    var r=calc(x,op,y);
+    var W=Math.max(String(x).length,String(y).length,String(r).length);
+    var grid=el('div','colop');
+    grid.style.gridTemplateColumns='repeat('+(W+1)+',var(--cw))';
+    var cols=[],carry=[],res=[],j;
+    for(j=0;j<W;j++) cols.push([]);
+    function cell(cls,text,col){
+      var c=el('div','cell '+cls+(col!=null?' '+PCLS[W-1-col]:''),text);
+      if(col!=null) cols[col].push(c);
+      grid.appendChild(c);
+      return c;
+    }
+    // ca în manualele din România: semnul stă în dreapta sus, lângă primul număr
+    function digitRow(n,signText){
+      var s=String(n);
+      for(var k=0;k<W;k++){var idx=k-(W-s.length);cell('',idx>=0?s[idx]:'',k);}
+      cell('sign',signText,null);
+    }
+    for(j=0;j<W;j++) cell('hd',PLACE_LETTER[W-1-j],j);
+    cell('hd','',null);
+    for(j=0;j<W;j++) carry.push(cell('cr','',j));
+    cell('cr','',null);
+    digitRow(x,sym(op));
+    digitRow(y,'');
+    grid.appendChild(el('div','bar'));
+    grid.appendChild(el('div'));
+    for(j=0;j<W;j++) res.push(cell('res','',j));
+    cell('','',null);
+    visual.appendChild(inCard(grid,'rock'));
+    var steps=columnSteps(x,op,y,W), L=String(r).length, q=0, wrongHere=0;
+    for(var e=L;e<W;e++) res[W-1-e].classList.remove('res');
+    function col(){return W-1-q;}
+    function stepText(){return 'La '+PLACE[q]+': '+(wrongHere>0?steps[q].txt:steps[q].ask);}
+    function highlight(){
+      cols.forEach(function(list,i){list.forEach(function(c){c.classList.toggle('act',q<L && i===col());});});
+      if(q<L) say((q===0?'Începem cu unitățile! ':'')+stepText());
+    }
+    var pad=el('div','keypad'), keys=[];
+    function press(d,k){
+      if(locked || q>=L) return;
+      if(d===steps[q].d){
+        res[col()].textContent=String(d);
+        res[col()].classList.add('filled');
+        if(steps[q].cout && col()>0){
+          var cr=carry[col()-1];
+          cr.textContent=op==='+'?'1':'−1';
+          cr.classList.add('on');
+        }
+        tick();
+        wrongHere=0;
+        pad.querySelectorAll('.wrong').forEach(function(w){w.classList.remove('wrong');});
+        q++;
+        highlight();
+        if(q>=L){pad.classList.add('off');keyHandler=null;onDone(r);}
+      } else {
+        wrongHere++;
+        if(k){k.classList.remove('wrong');void k.offsetWidth;k.classList.add('wrong');}
+        fail('Hmm, nu e '+d+'. '+stepText());
+      }
+    }
+    for(var dd=0;dd<=9;dd++){
+      (function(d){
+        var k=btn('key',String(d),function(){press(d,k);});
+        keys[d]=k;
+        pad.appendChild(k);
+      })(dd);
+    }
+    container.appendChild(pad);
+    keyHandler=function(ev){if(/^[0-9]$/.test(ev.key)) press(Number(ev.key),keys[Number(ev.key)]);};
+    highlight();
+  }
+
+  // ---------- Ordonăm numere atingându-le pe rând ----------
+  function orderTask(container,nums,asc,placeName,onDone){
+    var sorted=nums.slice().sort(function(a,b){return asc?a-b:b-a;});
+    var row=el('div','order-slots'), slots=[], k=0;
+    sorted.forEach(function(_,i){
+      if(i>0) row.appendChild(el('span','osep',asc?'<':'>'));
+      slots.push(row.appendChild(el('div','oslot'+(i===0?' cur':''),'')));
+    });
+    container.appendChild(row);
+    var tiles=el('div','tiles');
+    shuffle(nums.slice()).forEach(function(n){
+      var t=btn('tile',String(n),function(){
+        if(locked || t.disabled) return;
+        if(n===sorted[k]){
+          slots[k].textContent=String(n);
+          slots[k].classList.remove('cur');
+          slots[k].classList.add('filled');
+          t.disabled=true;
+          t.classList.add('used');
+          k++;
+          tick();
+          if(k<sorted.length) slots[k].classList.add('cur');
+          else onDone(sorted);
+        } else {
+          t.classList.remove('wrong');void t.offsetWidth;t.classList.add('wrong');
+          fail('Nu încă! Caută cel mai '+(asc?'MIC':'MARE')+' număr dintre cele rămase. Compară întâi '+placeName+'. 🔍');
+        }
+      });
+      tiles.appendChild(t);
+    });
+    container.appendChild(tiles);
+  }
+
+  // ---------- Plătim cu bancnote ----------
+  function billLabel(v){return v===1?'1 leu':v+' lei';}
+  function payTask(container,amount,onDone){
+    var VAL=[100,10,1], tray=[0,0,0];
+    var bills=el('div','bills'), trayBox=el('div','tray'), reading=el('div','reading');
+    function total(){return tray[0]*100+tray[1]*10+tray[2];}
+    function render(){
+      trayBox.replaceChildren();
+      if(!total()) trayBox.appendChild(el('div','tray-empty','Atinge bancnotele de mai sus ca să le pui pe tavă 👆'));
+      VAL.forEach(function(v,i){
+        if(!tray[i]) return;
+        var row=el('div','tray-row');
+        for(var k=0;k<tray[i];k++){
+          var b=btn('bill b'+v,billLabel(v),function(){if(locked) return;tray[i]--;render();});
+          b.title='Ia bancnota înapoi';
+          row.appendChild(b);
+        }
+        trayBox.appendChild(row);
+      });
+      reading.textContent='Pe tavă: '+lei(total());
+    }
+    VAL.forEach(function(v,i){
+      bills.appendChild(btn('bill b'+v,billLabel(v),function(){
+        if(locked) return;
+        if(tray[i]>=9){fail('Ai deja 9 bancnote de '+billLabel(v)+'. Mai bine folosește o bancnotă mai mare! 😉');return;}
+        tray[i]++;render();tick();
+      }));
+    });
+    var payBtn=btn('go-btn','Plătește ✔',function(){
+      if(locked) return;
+      var t=total();
+      if(t===amount){
+        payBtn.remove();
+        bills.querySelectorAll('button').forEach(function(b){b.disabled=true;});
+        onDone();
+      } else fail('Pe tavă sunt '+lei(t)+', dar trebuie exact '+lei(amount)+'. '+
+        (t<amount?'Mai pune bancnote! 💵':'E prea mult: atinge o bancnotă de pe tavă ca s-o iei înapoi. 💵'));
+    });
+    container.appendChild(bills);
+    container.appendChild(trayBox);
+    container.appendChild(reading);
+    container.appendChild(payBtn);
+    render();
+  }
+
+  // ---------- Desene ----------
+  var SHAPES=['cerc','pătrat','dreptunghi','triunghi'];
+  var SHAPE_PL={'cerc':'cercurile','pătrat':'pătratele','dreptunghi':'dreptunghiurile','triunghi':'triunghiurile'};
+  var SHAPE_COLORS=['#f43f5e','#8b5cf6','#0ea5e9','#22c55e','#f59e0b','#ec4899','#14b8a6'];
+  function shapeSvg(kind,color,size){
+    var s=svgEl('svg',{viewBox:'0 0 100 100',width:size,height:size,'aria-hidden':'true'});
+    if(kind==='cerc') svgEl('circle',{cx:50,cy:50,r:42,fill:color},s);
+    else if(kind==='pătrat') svgEl('rect',{x:12,y:12,width:76,height:76,rx:3,fill:color},s);
+    else if(kind==='dreptunghi') svgEl('rect',{x:4,y:27,width:92,height:46,rx:3,fill:color},s);
+    else svgEl('polygon',{points:'50,8 94,90 6,90',fill:color},s);
+    return s;
+  }
+  function itemsEl(e,n){
+    var wrap=el('div','items'), box=null;
+    for(var i=0;i<n;i++){
+      if(i%10===0){box=el('div','ibox');wrap.appendChild(box);}
+      var s=el('span',null,e);
+      s.style.animationDelay=(i*0.03)+'s';
+      box.appendChild(s);
+    }
+    return wrap;
+  }
+  function pvEl(h,t,u){
+    var wrap=el('div','pv');
+    [[h,'pv-h','sute','ph'],[t,'pv-t','zeci','pt'],[u,'pv-u','unități','pu']].forEach(function(g){
+      var box=el('div','pv-g '+g[3]), row=el('div','pv-row');
+      if(!g[0]) row.appendChild(el('span','pv-none','niciuna'));
+      for(var i=0;i<g[0];i++) row.appendChild(el('span',g[1]));
+      box.appendChild(row);
+      box.appendChild(el('span','pv-lab',g[2]));
+      wrap.appendChild(box);
+    });
+    return wrap;
+  }
+  function axisEl(vals,hide){
+    var ax=el('div','axis');
+    ax.appendChild(el('div','axis-line'));
+    vals.forEach(function(v,i){
+      var x=(6+i*(86/(vals.length-1)))+'%';
+      var t=el('div','tick');t.style.left=x;ax.appendChild(t);
+      var l=el('div','tick-lab'+(i===hide?' q':''),i===hide?'?':String(v));l.style.left=x;ax.appendChild(l);
+    });
+    return ax;
+  }
+  function roundAxisEl(lo,hi,n){
+    var ax=el('div','axis');
+    ax.appendChild(el('div','axis-line'));
+    for(var i=0;i<=10;i++){
+      var x=(6+i*8.6)+'%';
+      var t=el('div','tick'+(i===0||i===10?'':' small'));t.style.left=x;ax.appendChild(t);
+      if(i===0||i===5||i===10){
+        var l=el('div','tick-lab',String(lo+(hi-lo)*i/10));
+        l.style.left=x;
+        if(i===5) l.style.opacity='.55';
+        ax.appendChild(l);
+      }
+    }
+    var m=el('div','marker');
+    m.style.left=(6+(n-lo)/(hi-lo)*86)+'%';
+    m.appendChild(el('b',null,String(n)));
+    m.appendChild(el('i'));
+    ax.appendChild(m);
+    return ax;
+  }
+  function scaleEl(left,right){
+    var s=el('div','scale');
+    s.appendChild(el('div','beam'));s.appendChild(el('div','post'));s.appendChild(el('div','foot'));s.appendChild(el('div','pivot'));
+    [['l',left],['r',right]].forEach(function(p){
+      var pan=el('div','pan '+p[0]), str=el('div','strings');
+      str.appendChild(el('span','load',p[1]));
+      pan.appendChild(str);pan.appendChild(el('div','plate'));
+      s.appendChild(pan);
+    });
+    return s;
+  }
+  function robotEl(content){
+    var r=el('div','robot'), f=el('div','robot-face','🤖'), b=el('div','robot-say');
+    b.appendChild(el('small',null,'Calculo spune:'));
+    b.appendChild(content);
+    r.appendChild(f);r.appendChild(b);
+    return {root:r,face:f};
+  }
+  function basketsEl(k,n,e){
+    var row=el('div','baskets');
+    var cols=n<=3?n:n===4?2:n<=6?3:4;
+    for(var i=0;i<k;i++){
+      var b=el('div','basket');
+      b.style.animationDelay=(i*0.08)+'s';
+      b.style.gridTemplateColumns='repeat('+cols+',auto)';
+      for(var j=0;j<n;j++) b.appendChild(el('span',null,e));
+      row.appendChild(b);
+    }
+    return row;
+  }
+  function storyQ(text,ask){
+    question.replaceChildren(el('p','story',text),document.createTextNode(ask));
+  }
+  function cmpWhy(a,b){
+    if(a===b) return 'Uită-te bine: numerele sunt la fel! Atunci punem „=”.';
+    var names=['unitățile','zecile','sutele'];
+    for(var q=String(Math.max(a,b)).length-1;q>=0;q--){
+      var x=digitAt(a,q),y=digitAt(b,q);
+      if(x!==y) return 'Compară '+names[q]+': '+x+' și '+y+'. Care e mai mare? 🔍';
+    }
+    return '';
+  }
+  function exEq(a,op,b,r){
+    return op==='+'?
+      eqEl([{v:a,k:'a',l:'termen'},'+',{v:b,k:'b',l:'termen'},'=',{v:r,k:'s',l:'sumă'}],'small'):
+      eqEl([{v:a,k:'s',l:'descăzut'},MINUS,{v:b,k:'b',l:'scăzător'},'=',{v:r,k:'a',l:'diferență'}],'small');
+  }
+  function addEx(){return pick(function(){return {a:rand(120,599),b:rand(110,399)};},function(o){return carries(o.a,o.b)<=1 && o.a+o.b<=999;});}
+  function subEx(){return pick(function(){return {a:rand(350,999),b:rand(110,340)};},function(o){return borrows(o.a,o.b)<=1 && o.a-o.b>=100;});}
+  var ADD_HINT='Adunăm întâi unitățile cu unitățile, apoi zecile cu zecile. Dacă la unități trecem de 9, scriem doar unitățile și ținem 1 în minte la zeci.';
+  var SUB_HINT='Scădem întâi unitățile, apoi zecile. Dacă nu putem scădea unitățile, împrumutăm o zece (10 unități) de la zeci.';
+  var COL_ADD_HINT='Scriem unitățile sub unități, zecile sub zeci, sutele sub sute. Începem cu unitățile (coloana din dreapta). Dacă la o coloană trecem de 9, scriem unitățile și ținem 1 în minte la coloana următoare.';
+  var COL_SUB_HINT='Scriem unitățile sub unități, zecile sub zeci, sutele sub sute. Începem cu unitățile (coloana din dreapta). Dacă cifra de sus e mai mică, împrumutăm 1 de la cifra din stânga (o zece = 10 unități, o sută = 10 zeci).';
+
+  // =====================================================================
+  //  Cele 50 de provocări: câte 10 pentru fiecare capitol
+  // =====================================================================
+  var Q=[];
+
+  // ---------- 🌳 Pădurea Numerelor ----------
+  Q.push(function(){ // 1. numărăm
+    var it=choice([{e:'🍄',n:'ciuperci'},{e:'🌰',n:'ghinde'},{e:'🍁',n:'frunze'},{e:'🐞',n:'buburuze'},{e:'🌼',n:'flori'}]);
+    var N=rand(13,19);
+    storyQ('Capi pornește la drum! Pe marginea cărării sunt multe '+it.n+'.','Câte '+it.n+' sunt? '+it.e);
+    visual.appendChild(itemsEl(it.e,N));
+    hint='Prima cutie are 10 (două rânduri de câte 5). Numără câte mai sunt în a doua cutie și adaugă-le la 10.';
+    choices(activity,numChoices(N,'Mai numără o dată: o cutie plină are 10, apoi numără restul. 🐾',[1,-1,2,-2,10]),function(){
+      solved(N+' '+it.n+' '+it.e+' ✔');
+    });
+    say('Ajută-mă să număr, Rebe! 🐾');
+  });
+  function compareQ(three,storyText){
+    var lo=three?100:10, hi=three?999:99, a=rand(three?101:21,three?989:98), b, r=rand(0,9);
+    if(r<2) b=a;
+    else if(r<5) b=three?digitAt(a,2)*100+digitAt(a,0)*10+digitAt(a,1):digitAt(a,0)*10+digitAt(a,1);
+    else if(r<8) b=a+choice(three?[1,-1,10,-10,100,-100]:[1,-1,10,-10]);
+    else b=rand(lo,hi);
+    if(b<lo || b>hi || (r>=2 && b===a)) b=a<hi?a+1:a-1;
+    var sign=a<b?'<':a>b?'>':'=', slot=el('span','v slot','?');
+    storyQ(storyText,'Ce semn punem între numere?');
+    visual.appendChild(inCard(eqEl([{v:a},{v:slot},{v:b}]),'leaf'));
+    hint='Comparăm întâi '+(three?'sutele, apoi zecile, apoi unitățile':'zecile, apoi unitățile')+'. Semnul „<” înseamnă „mai mic decât”, „>” înseamnă „mai mare decât”. Vârful semnului arată spre numărul mai mic.';
+    var why=cmpWhy(a,b);
+    choices(activity,[
+      {label:'<',sub:'mai mic',ok:sign==='<',why:why},
+      {label:'=',sub:'egal',ok:sign==='=',why:why},
+      {label:'>',sub:'mai mare',ok:sign==='>',why:why}
+    ],function(){
+      slot.textContent=sign;
+      slot.classList.add('ok');
+      solved(a+' '+sign+' '+b+' ✔');
+    },{keep:true});
+    say('Compară numerele cu atenție! 🔍');
+  }
+  Q.push(function(){compareQ(false,'Doi iepurași 🐰 au strâns morcovi 🥕. Pe coșurile lor scrie câți morcovi are fiecare.');}); // 2
+  Q.push(function(){ // 3. sute, zeci, unități
+    var h=rand(1,9), t=rand(0,9), u=rand(0,9);
+    if(t===0 && u===0) u=rand(1,9);
+    var n=h*100+t*10+u, slot=slotEl();
+    storyQ('O veveriță 🐿️ i-a lăsat lui Capi o cutie cu cuburi: plăci de 100, bețișoare de 10 și cubulețe de 1.','Ce număr formează cuburile?');
+    visual.appendChild(pvEl(h,t,u));
+    visual.appendChild(eqEl([{v:'Numărul:'},{v:slot}],'small'));
+    hint='Plăcile mari sunt sutele, bețișoarele sunt zecile, cubulețele sunt unitățile. Câte plăci sunt → cifra sutelor. Câte bețișoare → cifra zecilor. Câte cubulețe → cifra unităților.'+(t===0||u===0?' Dacă nu e niciuna, scriem cifra 0!':'');
+    numPad(activity,slot,n,function(){solved(cnt(h,'sută','sute')+', '+cnt(t,'zece','zeci')+' și '+cnt(u,'unitate','unități')+' = '+n+' ✔');},function(v){
+      return v+' nu e corect. Numără din nou: câte plăci (sute), câte bețișoare (zeci), câte cubulețe (unități)? 🧊';
+    },false);
+    say('Numără plăcile, bețișoarele și cubulețele! 🧊');
+  });
+  Q.push(function(){compareQ(true,'Două veverițe 🐿️ au strâns alune pentru iarnă. Pe scorburile lor scrie câte alune au.');}); // 4
+  Q.push(function(){ // 5. axa numerelor
+    var step=choice([10,5,50]), start;
+    if(step===10) start=rand(1,8)*100+rand(0,4)*10;
+    else if(step===5) start=rand(2,12)*5;
+    else start=rand(1,13)*50;
+    var vals=[];
+    for(var i=0;i<6;i++) vals.push(start+i*step);
+    var hide=rand(1,4), v=vals[hide];
+    storyQ('Capi găsește între copaci o axă a numerelor fermecată. 📏','Ce număr se ascunde sub semnul întrebării?');
+    visual.appendChild(axisEl(vals,hide));
+    hint='Pe axă, pașii sunt egali. Uită-te cu cât crește numărul de la un semn la următorul, apoi fă încă un pas.';
+    choices(activity,numChoices(v,'Pașii sunt egali: din '+step+' în '+step+'. Pornește de la '+vals[hide-1]+' și mai fă un pas. 📏',
+      step===50?[10,-10,5,-5,1]:[1,-1,2,-2]),function(){solved('Din '+step+' în '+step+': '+vals.join(', ')+' ✔');});
+    say('Ce număr lipsește de pe axă? 📏');
+  });
+  Q.push(function(){ // 6. numărul de după / dinainte
+    var h=rand(1,8), k=rand(0,3), n, after;
+    if(k===0){n=h*100+99;after=true;}
+    else if(k===1){n=(h+1)*100;after=false;}
+    else if(k===2){n=h*100+rand(1,8)*10+9;after=true;}
+    else {n=h*100+rand(1,9)*10;after=false;}
+    var ans=after?n+1:n-1, slot=slotEl();
+    storyQ('Pe bușteni sunt scrise numere, unul după altul. 🪵',after?'Ce număr vine imediat DUPĂ '+n+'?':'Ce număr vine imediat ÎNAINTE de '+n+'?');
+    visual.appendChild(inCard(eqEl(after?[{v:n},'→',{v:slot}]:[{v:slot},'→',{v:n}]),'wood'));
+    hint='Imediat după un număr vine numărul cu 1 mai mare. Imediat înainte vine numărul cu 1 mai mic. Atenție la 9 unități: după 459 vine 460, iar înainte de 460 vine 459.';
+    numPad(activity,slot,ans,function(){solved(after?n+' → '+ans+' ✔':ans+' → '+n+' ✔');},function(v){
+      return v+' nu e corect. '+(after?'Numărul de după este cu 1 mai mare decât '+n:'Numărul de dinainte este cu 1 mai mic decât '+n)+'. 🪵';
+    },false);
+    say('Scrie numărul de pe buștean! ✏️');
+  });
+  function orderNums(three){
+    return pick(function(){
+      var base=three?rand(1,8)*100:rand(2,8)*10, arr=[base+rand(0,three?99:9),base+rand(0,three?99:9)];
+      while(arr.length<4) arr.push(three?rand(100,999):rand(10,99));
+      return arr;
+    },function(a){return uniq(a).length===4;});
+  }
+  Q.push(function(){ // 7. crescător
+    var nums=orderNums(false);
+    storyQ('Capi trece pârâul pe pietre. Pietrele trebuie așezate în ordine CRESCĂTOARE. 🪨','Atinge numerele de la cel mai MIC la cel mai MARE!');
+    hint='Crescător înseamnă de la mic la mare. Caută întâi numărul cu cele mai puține zeci. Dacă au aceleași zeci, compară unitățile.';
+    orderTask(activity,nums,true,'zecile',function(s){solved(s.join(' < ')+' ✔');});
+    say('De la cel mai mic la cel mai mare! 📈');
+  });
+  Q.push(function(){ // 8. rotunjim la zeci
+    var n=pick(function(){return rand(101,989);},function(x){return x%10!==0;});
+    var lo=n-n%10, hi=lo+10, u=n%10, ans=u>=5?hi:lo, h=Math.round(n/100)*100;
+    storyQ('O bufniță 🦉 îi cere lui Capi să rotunjească un număr la ZECI.','Cât este '+n+' rotunjit la zeci?');
+    visual.appendChild(roundAxisEl(lo,hi,n));
+    hint='Caută cele două zeci vecine: '+lo+' și '+hi+'. Dacă cifra unităților este 0, 1, 2, 3 sau 4, alegem zecea mai mică. Dacă este 5, 6, 7, 8 sau 9, alegem zecea mai mare.';
+    var why='Uită-te la cifra unităților: '+u+'. '+(u>=5?'Fiind 5 sau mai mult, mergem la zecea mai mare.':'Fiind mai mică decât 5, rămânem la zecea mai mică.')+' 🎯';
+    choices(activity,uniq([lo,hi,h,lo-10]).slice(0,4).map(function(v){
+      return {label:String(v),ok:v===ans,why:v===h && h!==lo && h!==hi?'Asta e rotunjirea la SUTE. Noi rotunjim la ZECI! 🎯':why};
+    }),function(){solved(n+' ≈ '+ans+' ✔');});
+    say('Rotunjim la zeci! Uită-te la unități. 🎯');
+  });
+  Q.push(function(){ // 9. rotunjim la sute
+    var n=pick(function(){return rand(0,9)<2?rand(950,999):rand(110,940);},function(x){return x%100!==0;});
+    var lo=n-n%100, hi=lo+100, t=n%100, ans=t>=50?hi:lo, z=Math.round(n/10)*10;
+    storyQ('Bufnița 🦉 are încă o provocare: rotunjim la SUTE!','Cât este '+n+' rotunjit la sute?');
+    visual.appendChild(roundAxisEl(lo,hi,n));
+    hint='Caută cele două sute vecine: '+lo+' și '+hi+'. Dacă ultimele două cifre fac mai puțin de 50, alegem suta mai mică. De la 50 în sus, alegem suta mai mare.';
+    var why='Uită-te la ultimele două cifre: '+('0'+t).slice(-2)+'. '+(t>=50?'Fiind 50 sau mai mult, mergem la suta mai mare.':'Fiind sub 50, rămânem la suta mai mică.')+' 💯';
+    choices(activity,uniq([lo,hi,z,lo+50]).slice(0,4).map(function(v){
+      var w=why;
+      if(v===z && z!==lo && z!==hi) w='Asta e rotunjirea la ZECI. Noi rotunjim la SUTE! 💯';
+      else if(v%100!==0) w='La sute rezultatul este o sută întreagă (se termină în 00). 💯';
+      return {label:String(v),ok:v===ans,why:w};
+    }),function(){solved(n+' ≈ '+ans+' ✔');});
+    say('Rotunjim la sute! Uită-te la zeci și unități. 💯');
+  });
+  Q.push(function(){ // 10. descrescător
+    var nums=orderNums(true);
+    storyQ('La ieșirea din pădure, patru copaci au numere. Capi trebuie să-i numere în ordine DESCRESCĂTOARE. 🌳','Atinge numerele de la cel mai MARE la cel mai MIC!');
+    hint='Descrescător înseamnă de la mare la mic. Caută întâi numărul cu cele mai multe sute. Dacă au aceleași sute, compară zecile, apoi unitățile.';
+    orderTask(activity,nums,false,'sutele',function(s){solved(s.join(' > ')+' ✔');});
+    say('De la cel mai mare la cel mai mic! 📉');
+  });
+
+  // ---------- 🌊 Râul Adunărilor ----------
+  function riverCalc(op,gen,ok,storyText,ask){
+    var o=pick(gen,ok), r=calc(o.a,op,o.b);
+    storyQ(storyText,ask||'Cât fac '+o.a+' '+sym(op)+' '+o.b+'?');
+    hint=op==='+'?ADD_HINT:SUB_HINT;
+    calcPad(activity,o.a,op,o.b,function(){solved(o.a+' '+sym(op)+' '+o.b+' = '+r+' ✔');},{card:'water'});
+    say('Începe cu unitățile, apoi zecile! 🌊');
+  }
+  Q.push(function(){riverCalc('+',function(){return {a:rand(21,68),b:rand(11,31)};},function(o){return carries(o.a,o.b)===0&&o.a+o.b<=99&&o.b%10!==0;},
+    'Capi intră în apă și înoată 🌊. Pe prima piatră din râu scrie o adunare.');}); // 11
+  Q.push(function(){riverCalc('-',function(){return {a:rand(46,98),b:rand(12,45)};},function(o){return borrows(o.a,o.b)===0&&o.a-o.b>=11&&o.b%10!==0;},
+    'Un val îi aduce lui Capi o scădere.');}); // 12
+  Q.push(function(){riverCalc('+',function(){return {a:rand(25,69),b:rand(15,39)};},function(o){return carries(o.a,o.b)===1&&o.a+o.b<=99;},
+    'Aici apa e mai adâncă! O adunare cu trecere peste ordin. 🌊');}); // 13
+  Q.push(function(){riverCalc('-',function(){return {a:rand(41,95),b:rand(12,48)};},function(o){return borrows(o.a,o.b)===1&&o.a-o.b>=11;},
+    'Un pește 🐟 îi arată lui Capi o scădere cu împrumut.');}); // 14
+  Q.push(function(){ // 15. denumirile
+    var op=choice(['+','-']), a, b, r;
+    if(op==='+'){a=rand(21,59);b=rand(11,39);r=a+b;} else {a=rand(50,98);b=rand(11,a-11);r=a-b;}
+    var idx=rand(0,2);
+    var right=(op==='+'?['termen','termen','sumă']:['descăzut','scăzător','diferență'])[idx];
+    var ART={'termen':'un termen','sumă':'suma','descăzut':'descăzutul','scăzător':'scăzătorul','diferență':'diferența'};
+    var items=[{v:a},sym(op),{v:b},'=',{v:r}];
+    items[[0,2,4][idx]].hl=true;
+    storyQ('O rățușcă 🦆 îi pune lui Capi o ghicitoare despre numerele din socoteală.','Cum se numește numărul colorat?');
+    visual.appendChild(inCard(eqEl(items),'water'));
+    hint=op==='+'?'La adunare: termen + termen = sumă.':'La scădere: descăzut − scăzător = diferență.';
+    choices(activity,(op==='+'?['termen','sumă','diferență','descăzut']:['descăzut','scăzător','diferență','sumă']).map(function(n){
+      return {label:n,ok:n===right,why:hint+' 🦆'};
+    }),function(){solved([a,b,r][idx]+' este '+ART[right]+' ✔');},{wide:true});
+    say('Știi cum se numesc numerele dintr-o '+(op==='+'?'adunare':'scădere')+'? 🦆');
+  });
+  Q.push(function(){ // 16. termenul necunoscut
+    var o=pick(function(){return {a:rand(15,59),b:rand(12,39)};},function(o){return o.a+o.b<=99&&carries(o.a,o.b)<=1&&o.a%10!==0&&o.b%10!==0;});
+    var s=o.a+o.b, first=rand(0,1)===0, known=first?o.b:o.a, ans=first?o.a:o.b, slot=slotEl();
+    storyQ('Un pește 🐟 a ascuns un număr sub o piatră.','Ce număr lipsește?');
+    visual.appendChild(inCard(eqEl(first?
+      [{v:slot,k:'a',l:'termen'},'+',{v:known,k:'b',l:'termen'},'=',{v:s,k:'s',l:'sumă'}]:
+      [{v:known,k:'a',l:'termen'},'+',{v:slot,k:'b',l:'termen'},'=',{v:s,k:'s',l:'sumă'}]),'water'));
+    hint='Lipsește un termen. Termenul necunoscut = suma − termenul cunoscut. Calculează '+s+' − '+known+'.';
+    numPad(activity,slot,ans,function(){solved((first?ans+' + '+known:known+' + '+ans)+' = '+s+' ✔');},function(v){
+      if(v===s+known) return 'Termenul care lipsește e mai mic decât suma. Ca să-l aflăm, SCĂDEM: '+s+' − '+known+'. ⭐';
+      return 'Verifică: '+(first?v+' + '+known:known+' + '+v)+' = '+(v+known)+', nu '+s+'. Calculează '+s+' − '+known+'. ⭐';
+    },true);
+    say('Ce număr s-a ascuns sub piatră? 🐟');
+  });
+  Q.push(function(){ // 17. descăzutul sau scăzătorul necunoscut
+    var slot=slotEl(), a, b, d, ans, items, help;
+    if(rand(0,1)===0){
+      var o=pick(function(){return {b:rand(12,39),d:rand(11,50)};},function(o){return o.b+o.d<=99&&carries(o.b,o.d)<=1;});
+      b=o.b;d=o.d;a=b+d;ans=a;
+      items=[{v:slot,k:'s',l:'descăzut'},MINUS,{v:b,k:'b',l:'scăzător'},'=',{v:d,k:'a',l:'diferență'}];
+      hint='Lipsește descăzutul (numărul din care scădem). Descăzutul = diferența + scăzătorul: '+d+' + '+b+'.';
+      help=function(v){
+        if(v<b) return 'Descăzutul este cel mai mare număr. Îl aflăm ADUNÂND: '+d+' + '+b+'. ⭐';
+        return 'Verifică: '+v+' − '+b+' trebuie să dea '+d+'. Calculează '+d+' + '+b+'. ⭐';
+      };
+    } else {
+      var o2=pick(function(){return {a:rand(50,98),d:rand(11,40)};},function(o){return o.a-o.d>=11&&borrows(o.a,o.d)<=1;});
+      a=o2.a;d=o2.d;b=a-d;ans=b;
+      items=[{v:a,k:'s',l:'descăzut'},MINUS,{v:slot,k:'b',l:'scăzător'},'=',{v:d,k:'a',l:'diferență'}];
+      hint='Lipsește scăzătorul (numărul pe care îl scădem). Scăzătorul = descăzutul − diferența: '+a+' − '+d+'.';
+      help=function(v){
+        if(v>a) return 'Scăzătorul e mai mic decât descăzutul. Îl aflăm SCĂZÂND: '+a+' − '+d+'. ⭐';
+        return 'Verifică: '+a+' − '+v+' trebuie să dea '+d+'. Calculează '+a+' − '+d+'. ⭐';
+      };
+    }
+    storyQ('O broscuță 🐸 a acoperit un număr cu o frunză de nufăr.','Ce număr lipsește?');
+    visual.appendChild(inCard(eqEl(items),'water'));
+    numPad(activity,slot,ans,function(){solved(a+' − '+b+' = '+d+' ✔');},help,true);
+    say('Ce număr s-a ascuns sub frunză? 🐸');
+  });
+  Q.push(function(){ // 18. grupăm isteț
+    var o=pick(function(){var a=rand(13,58);return {a:a,b:rand(11,35),c:10-a%10};},
+      function(o){return o.a%10!==0&&o.b%10!==0&&o.a+o.b+o.c<=99&&(o.b+o.c)%10!==0&&(o.a+o.b)%10!==0;});
+    var a=o.a,b=o.b,c=o.c,ac=a+c,T=ac+b;
+    storyQ('Capi a găsit trei grămezi de scoici 🐚: '+a+', '+b+' și '+c+'.','Câte scoici sunt în total? Grupăm isteț!');
+    visual.appendChild(inCard(eqEl([{v:a},'+',{v:b},'+',{v:c},'=',{v:'?'}]),'water'));
+    hint='Caută două numere ale căror unități fac împreună 10. Adunate, ele dau un număr „rotund” (cu 0 la unități). Apoi adunăm și numărul rămas.';
+    var s1=step('Pasul 1: Ce numere adunăm întâi, ca să obținem un număr rotund?');
+    choices(s1,[
+      {label:a+' + '+c,ok:true},
+      {label:a+' + '+b,ok:false,why:a+' + '+b+' = '+(a+b)+' nu e un număr rotund. Caută două numere ale căror unități fac 10! 🐚'},
+      {label:b+' + '+c,ok:false,why:b+' + '+c+' = '+(b+c)+' nu e un număr rotund. Caută două numere ale căror unități fac 10! 🐚'}
+    ],function(){
+      var s2=step('Pasul 2: '+a+' + '+c+' = '+ac+'. Acum adună și '+b+'!');
+      calcPad(s2,ac,'+',b,function(){solved(a+' + '+b+' + '+c+' = '+ac+' + '+b+' = '+T+' 🐚 ✔');},{into:s2,small:true});
+      say('Bravo! '+ac+' e un număr rotund. Acum adună '+b+'! ➕');
+    },{wide:true});
+    say('Grupează isteț: caută numerele care fac un număr rotund! 🧩');
+  });
+  Q.push(function(){ // 19. problemă cu o operație
+    var T=[
+      {op:'+',gen:function(){return {a:rand(21,59),b:rand(11,35)};},
+       text:function(o){return 'Pe malul stâng sunt '+de(o.a,'rațe')+' 🦆. Pe malul drept sunt cu '+o.b+' mai multe.';},ask:'Câte rațe sunt pe malul drept?',unit:'rațe'},
+      {op:'-',gen:function(){return {a:rand(40,95),b:rand(11,35)};},
+       text:function(o){return 'Capi a numărat '+de(o.a,'nuferi albi')+' 🪷. Nuferi roz sunt cu '+o.b+' mai puțini.';},ask:'Câți nuferi roz sunt?',unit:'nuferi roz'},
+      {op:'+',gen:function(){return {a:rand(21,55),b:rand(11,40)};},
+       text:function(o){return 'Pe un mal sunt '+de(o.a,'broaște')+' 🐸, iar pe celălalt mal '+de(o.b,'broaște')+'.';},ask:'Câte broaște sunt în total?',unit:'broaște'},
+      {op:'-',gen:function(){return {a:rand(40,95),b:rand(11,35)};},
+       text:function(o){return 'Pe râu pluteau '+de(o.a,'frunze')+' 🍃. '+o.b+' frunze au ajuns la mal.';},ask:'Câte frunze mai plutesc?',unit:'frunze'}
+    ][rand(0,3)];
+    var o=pick(T.gen,function(o){return T.op==='+'?o.a+o.b<=99&&carries(o.a,o.b)<=1:o.a-o.b>=10&&borrows(o.a,o.b)<=1;});
+    var r=calc(o.a,T.op,o.b);
+    storyQ(T.text(o),T.ask);
+    hint=T.op==='+'?'„Mai multe” sau „în total” înseamnă că ADUNĂM.':'„Mai puțini” sau „mai rămân” înseamnă că SCĂDEM.';
+    var s1=step('Pasul 1: Ce calcul facem?');
+    choices(s1,[
+      {label:o.a+' + '+o.b,ok:T.op==='+',why:'Mai citește o dată: „mai puțini” sau „mai rămân” înseamnă că scădem! ➖'},
+      {label:o.a+' − '+o.b,ok:T.op==='-',why:'Mai citește o dată: „mai multe” sau „în total” înseamnă că adunăm! ➕'}
+    ],function(){
+      var s2=step('Pasul 2: Calculează!');
+      calcPad(s2,o.a,T.op,o.b,function(){solved(o.a+' '+sym(T.op)+' '+o.b+' = '+de(r,T.unit)+' ✔');},{into:s2,small:true});
+    },{wide:true,keep:true});
+    say('Citește problema cu atenție: adunăm sau scădem? 📖');
+  });
+  Q.push(function(){ // 20. problemă în doi pași
+    var o=pick(function(){return {A:rand(45,85),B:rand(12,29),C:rand(11,29)};},function(o){return o.A-o.B>=20&&o.A-o.B+o.C<=99;});
+    var R1=o.A-o.B, R2=R1+o.C;
+    storyQ('Pe malul râului erau '+de(o.A,'rățuște')+' 🦆. '+o.B+' au plecat la cuib, apoi au mai venit '+o.C+'.','Câte rățuște sunt acum pe mal?');
+    hint='Problemă în doi pași. Întâi scădem rățuștele care au plecat. Apoi adunăm rățuștele care au venit.';
+    var s1=step('Pasul 1: Câte rățuște au rămas după ce au plecat '+o.B+'?');
+    calcPad(s1,o.A,'-',o.B,function(){
+      var s2=step('Pasul 2: Au rămas '+R1+'. Apoi au venit '+o.C+'. Câte sunt acum?');
+      calcPad(s2,R1,'+',o.C,function(){solved(o.A+' − '+o.B+' + '+o.C+' = '+de(R2,'rățuște')+' 🦆 ✔');},{into:s2,small:true});
+      say('Acum adunăm rățuștele care au venit! ➕');
+    },{into:s1,small:true});
+    say('Problemă în doi pași! Întâi cele care pleacă. 🦆');
+  });
+
+  // ---------- ⛰️ Muntele Sutelor ----------
+  var GOODS=[{e:'🎒',n:'un rucsac'},{e:'🧢',n:'o șapcă'},{e:'🔦',n:'o lanternă'},{e:'🧣',n:'un fular'},
+    {e:'🥾',n:'niște bocanci'},{e:'⛺',n:'un cort'},{e:'🧤',n:'o pereche de mănuși'},{e:'🕶️',n:'niște ochelari de soare'}];
+  function colQ(op,gen,ok,storyText){
+    var o=pick(gen,ok);
+    storyQ(storyText,'Calculează în coloană: '+o.a+' '+sym(op)+' '+o.b);
+    hint=op==='+'?COL_ADD_HINT:COL_SUB_HINT;
+    columnTask(activity,o.a,op,o.b,function(r){solved(o.a+' '+sym(op)+' '+o.b+' = '+r+' ✔');});
+  }
+  Q.push(function(){ // 21. sute întregi
+    var op=choice(['+','-']), a, b;
+    if(op==='+'){a=rand(1,6)*100;b=rand(1,9-a/100)*100;} else {a=rand(3,9)*100;b=rand(1,a/100-1)*100;}
+    var r=calc(a,op,b);
+    if(op==='+') storyQ('Capi începe să urce pe munte. A urcat '+de(a,'trepte')+', apoi încă '+b+'.','Câte trepte a urcat în total? ⛰️');
+    else storyQ('Poteca are '+de(a,'trepte')+'. Capi a urcat deja '+b+'.','Câte trepte mai are de urcat? ⛰️');
+    visual.appendChild(inCard(eqEl([{v:a},sym(op),{v:b},'=',{v:'?'}]),'rock'));
+    hint='Socotim sutele ca pe unități. De exemplu: 3 + 4 = 7, deci 3 sute + 4 sute = 7 sute = 700.';
+    choices(activity,numChoices(r,'Gândește în sute: '+a/100+' sute '+sym(op)+' '+b/100+' sute = ? sute. 💯',[100,-100,200,10],100,1000),function(){
+      solved(a+' '+sym(op)+' '+b+' = '+r+' ✔');
+    });
+    say('Sute întregi! Le socotim ca pe unități. 💯');
+  });
+  Q.push(function(){colQ('+',function(){return {a:rand(120,699),b:rand(110,299)};},function(o){return carries(o.a,o.b)===0&&o.a+o.b<=999;},
+    'Pe o stâncă mare e scrisă o adunare. ⛰️');}); // 22
+  Q.push(function(){colQ('-',function(){return {a:rand(350,999),b:rand(110,340)};},function(o){return borrows(o.a,o.b)===0;},
+    'O capră de munte 🐐 îi arată lui Capi o scădere.');}); // 23
+  Q.push(function(){ // 24. trei cifre ± două cifre, pe aceeași linie
+    var op=choice(['+','-']), o;
+    if(op==='+') o=pick(function(){return {a:rand(120,960),b:rand(11,39)};},function(o){return carries(o.a,o.b)===0&&o.a+o.b<=999&&o.a%10!==0;});
+    else o=pick(function(){return {a:rand(150,999),b:rand(11,59)};},function(o){return borrows(o.a,o.b)===0&&o.a%10!==0;});
+    var r=calc(o.a,op,o.b);
+    storyQ('Un cristal 💎 strălucește pe potecă. Pe el scrie o socoteală.','Calculează pe aceeași linie: '+o.a+' '+sym(op)+' '+o.b);
+    hint='Pe aceeași linie socotim pe rând: unitățile cu unitățile, zecile cu zecile. Sutele rămân la fel, pentru că al doilea număr nu are sute.';
+    calcPad(activity,o.a,op,o.b,function(){solved(o.a+' '+sym(op)+' '+o.b+' = '+r+' ✔');},{card:'rock'});
+    say('Al doilea număr are doar zeci și unități! Începe cu unitățile. 💎');
+  });
+  Q.push(function(){colQ('+',function(){return {a:rand(120,699),b:rand(110,299)};},function(o){return carries(o.a,o.b)===1&&o.a+o.b<=999;},
+    'Poteca devine abruptă! O adunare cu trecere peste ordin. 🧗');}); // 25
+  Q.push(function(){colQ('-',function(){return {a:rand(350,999),b:rand(110,340)};},function(o){return borrows(o.a,o.b)===1&&o.a-o.b>=100;},
+    'Un vultur 🦅 a lăsat pe o stâncă o scădere cu împrumut.');}); // 26
+  Q.push(function(){ // 27. cumpărături + plata cu bancnote
+    var g=shuffle(GOODS.slice()).slice(0,2);
+    var o=pick(function(){return {a:rand(110,499),b:rand(100,399)};},function(o){return carries(o.a,o.b)===0&&o.a+o.b<=999&&o.a%10!==0;});
+    var T=o.a+o.b;
+    storyQ('La cabana de pe munte, Capi cumpără '+g[0].n+' '+g[0].e+' și '+g[1].n+' '+g[1].e+'.','Cât plătește în total? Apoi plătește cu bancnote!');
+    var shop=el('div','shop');
+    [[g[0],o.a],[g[1],o.b]].forEach(function(x){
+      var it=el('div','item');
+      it.appendChild(el('div','em',x[0].e));
+      it.appendChild(el('span','price',lei(x[1])));
+      shop.appendChild(it);
+    });
+    visual.appendChild(shop);
+    hint='„În total” înseamnă adunare: '+o.a+' + '+o.b+'. Apoi pune pe tavă: bancnote de 100 pentru sute, de 10 pentru zeci și de 1 leu pentru unități.';
+    var s1=step('Pasul 1: Cât costă în total?');
+    calcPad(s1,o.a,'+',o.b,function(){
+      var s2=step('Pasul 2: Plătește exact '+lei(T)+' cu bancnote!');
+      payTask(s2,T,function(){solved('Capi a plătit '+lei(T)+' 💵 ✔');});
+      say('Pune bancnotele pe tavă: sute, zeci și unități! 💵');
+    },{into:s1,small:true});
+    say('„În total” înseamnă că adunăm! 🛒');
+  });
+  Q.push(function(){ // 28. cât rămâne
+    var W=rand(5,9)*100, g=choice(GOODS);
+    var P=pick(function(){return rand(12,W/10-3)*10;},function(p){return p%100!==0;});
+    var R=W-P;
+    storyQ('Capi are '+lei(W)+' în pușculiță 🐷. Cumpără '+g.n+' '+g.e+' care costă '+lei(P)+'.','Câți lei îi rămân?');
+    var shop=el('div','shop'), w=el('div','item wallet'), it=el('div','item');
+    w.appendChild(el('div','em','🐷'));w.appendChild(el('span','price',lei(W)));
+    it.appendChild(el('div','em',g.e));it.appendChild(el('span','price',lei(P)));
+    shop.appendChild(w);shop.appendChild(it);
+    visual.appendChild(shop);
+    hint='„Rămân” înseamnă scădere: '+W+' − '+P+'. La zeci: din 0 nu putem scădea, așa că împrumutăm o sută (o sută = 10 zeci).';
+    calcPad(activity,W,'-',P,function(){solved('Îi rămân '+lei(R)+' ✔');},{card:'rock'});
+    say('„Rămân” înseamnă că scădem! 🐷');
+  });
+  Q.push(function(){colQ('+',function(){return {a:rand(150,599),b:rand(150,399)};},function(o){return carries(o.a,o.b)===2&&o.a+o.b<=999;},
+    'Aproape de vârf! Provocarea muntelui: o adunare cu DOUĂ treceri peste ordin. 🏔️');}); // 29
+  Q.push(function(){ // 30. balanța
+    var slot=slotEl(), ans, items, left, right, help, res;
+    if(rand(0,1)===0){
+      var o=pick(function(){return {x:rand(120,599),b:rand(110,399)};},function(o){return carries(o.x,o.b)===0&&o.x+o.b<=999;});
+      var s=o.x+o.b;
+      ans=o.x;left='? + '+o.b;right=String(s);res=o.x+' + '+o.b+' = '+s;
+      items=[{v:slot,k:'a',l:'termen'},'+',{v:o.b,k:'b',l:'termen'},'=',{v:s,k:'s',l:'sumă'}];
+      hint='Termenul necunoscut = suma − termenul cunoscut: '+s+' − '+o.b+'.';
+      help=function(v){return 'Verifică: '+v+' + '+o.b+' = '+(v+o.b)+', nu '+s+'. Calculează '+s+' − '+o.b+'. ⚖️';};
+    } else {
+      var o2=pick(function(){return {d:rand(110,499),b:rand(110,399)};},function(o){return carries(o.d,o.b)===0&&o.d+o.b<=999;});
+      var a=o2.d+o2.b;
+      ans=a;left='? − '+o2.b;right=String(o2.d);res=a+' − '+o2.b+' = '+o2.d;
+      items=[{v:slot,k:'s',l:'descăzut'},MINUS,{v:o2.b,k:'b',l:'scăzător'},'=',{v:o2.d,k:'a',l:'diferență'}];
+      hint='Lipsește descăzutul. Descăzutul = diferența + scăzătorul: '+o2.d+' + '+o2.b+'.';
+      help=function(v){return 'Verifică: '+v+' − '+o2.b+' trebuie să dea '+o2.d+'. Calculează '+o2.d+' + '+o2.b+'. ⚖️';};
+    }
+    storyQ('Pe vârful muntelui e o balanță veche ⚖️. Ca să stea dreaptă, cele două talere trebuie să fie egale.','Ce număr lipsește?');
+    visual.appendChild(scaleEl(left,right));
+    visual.appendChild(eqEl(items));
+    numPad(activity,slot,ans,function(){solved(res+' ⚖️ ✔');},help,true);
+    say('Găsește numărul ascuns, ca balanța să stea dreaptă! ⚖️');
+  });
+
+  // ---------- 🌉 Podul lui Calculo ----------
+  Q.push(function(){ // 31. proba adunării prin scădere
+    var o=addEx(), s=o.a+o.b;
+    storyQ('Calculo 🤖 a scris o adunare pe prima scândură. Răspunde corect și scândura se pune la loc!','Care este PROBA PRIN SCĂDERE?');
+    visual.appendChild(inCard(exEq(o.a,'+',o.b,s),'wood'));
+    hint='Proba adunării prin scădere: din SUMĂ scădem unul dintre termeni. Trebuie să obținem celălalt termen.';
+    choices(activity,[
+      {label:s+' − '+o.b,ok:true},
+      {label:s+' − '+o.a,ok:true},
+      {label:s+' + '+o.b,ok:false,why:'Proba prin scădere este o scădere! Din sumă scădem un termen. ➖'},
+      {label:Math.max(o.a,o.b)+' − '+Math.min(o.a,o.b),ok:false,why:'Pornim de la sumă ('+s+') și scădem un termen. 🔍'}
+    ],function(){solved('Proba: '+s+' − '+o.b+' = '+o.a+' sau '+s+' − '+o.a+' = '+o.b+' ✔');},{wide:true});
+    say('Proba adunării prin scădere: pornim de la sumă! 🔑');
+  });
+  Q.push(function(){ // 32. calculăm proba
+    var add=rand(0,1)===0, o=add?addEx():subEx(), r=add?o.a+o.b:o.a-o.b;
+    var x=r, op=add?'-':'+', tgt=add?'primul termen':'descăzutul';
+    storyQ('Calculo 🤖 vrea să vadă dacă știi să faci proba.','Calculează proba '+(add?'adunării prin scădere':'scăderii prin adunare')+':');
+    visual.appendChild(inCard(exEq(o.a,add?'+':'-',o.b,r),'wood'));
+    hint=add?'Din sumă scădem al doilea termen. Dacă obținem primul termen, proba iese!':'Adunăm diferența cu scăzătorul. Dacă obținem descăzutul, proba iese!';
+    calcPad(activity,x,op,o.b,function(){solved('Am obținut '+o.a+' – '+tgt+'! Proba iese ✔');},{card:'wood'});
+    say('Fă proba! Începe cu unitățile. 🔍');
+  });
+  Q.push(function(){ // 33. proba scăderii prin adunare
+    var o=subEx(), d=o.a-o.b;
+    storyQ('Pe următoarea scândură e o scădere. 🪵','Care este PROBA PRIN ADUNARE?');
+    visual.appendChild(inCard(exEq(o.a,'-',o.b,d),'wood'));
+    hint='Proba scăderii prin adunare: adunăm DIFERENȚA cu SCĂZĂTORUL. Trebuie să obținem descăzutul.';
+    choices(activity,[
+      {label:d+' + '+o.b,ok:true},
+      {label:o.a+' + '+o.b,ok:false,why:'Nu pornim de la descăzut. Adunăm diferența ('+d+') cu scăzătorul ('+o.b+'). 🔍'},
+      {label:d+' − '+o.b,ok:false,why:'Proba prin adunare este o adunare! ➕'},
+      {label:o.a+' + '+d,ok:false,why:'Adunăm diferența cu SCĂZĂTORUL, nu cu descăzutul. 🔍'}
+    ],function(){solved('Proba: '+d+' + '+o.b+' = '+o.a+' ✔');},{wide:true});
+    say('Proba scăderii prin adunare: diferența + scăzătorul! 🔑');
+  });
+  function calculoQ(op){
+    var o=op==='+'?addEx():subEx(), right=calc(o.a,op,o.b), c=right;
+    if(Math.random()<0.5){
+      var bad=shuffle([10,-10,100,-100,1,-1]).map(function(d){return right+d;}).filter(function(v){
+        return v>=100 && v<=999 && (op==='+'?v-o.b>=10:v+o.b<=999);
+      });
+      if(bad.length) c=bad[0];
+    }
+    var ok=c===right, pop=op==='+'?'-':'+', pv=calc(c,pop,o.b), tname=op==='+'?'primul termen':'descăzutul';
+    storyQ('Calculo 🤖 păzește podul și spune că a socotit corect.','Facem proba ca să vedem dacă a greșit!');
+    var R=robotEl(eqEl([{v:o.a},sym(op),{v:o.b},'=',{v:c}],'small'));
+    visual.appendChild(R.root);
+    hint=op==='+'?
+      'Proba adunării prin scădere: din suma scrisă de Calculo scădem al doilea termen. Dacă obținem primul termen, calculul e corect.':
+      'Proba scăderii prin adunare: adunăm diferența scrisă de Calculo cu scăzătorul. Dacă obținem descăzutul, calculul e corect.';
+    var s1=step('Pasul 1: Fă proba prin '+(op==='+'?'scădere':'adunare')+':');
+    calcPad(s1,c,pop,o.b,function(){
+      var s2=step('Pasul 2: Proba dă '+pv+'. Trebuia să obținem '+tname+', '+o.a+'. A socotit bine Calculo?');
+      choices(s2,[
+        {label:'✅ Da, e corect',ok:ok,why:pv+' nu este egal cu '+o.a+'. Proba nu iese! 🔍'},
+        {label:'❌ Nu, a greșit',ok:!ok,why:'Proba a dat exact '+o.a+', deci calculul e bun! 🔍'}
+      ],function(){
+        if(ok){R.face.textContent='🤖👍';solved('Proba iese: '+pv+' = '+o.a+'. Calculo a socotit corect! ✔');}
+        else {R.face.textContent='😵‍💫';solved('Calculo a greșit! Corect este '+o.a+' '+sym(op)+' '+o.b+' = '+right+' ✔');}
+      },{wide:true,keep:true});
+      say('Compară rezultatul probei cu '+tname+'! 🔍');
+    },{into:s1,small:true});
+    say('Facem proba cu rezultatul lui Calculo! 🤖');
+  }
+  Q.push(function(){calculoQ('+');}); // 34
+  Q.push(function(){ // 35. forme
+    var k=choice(SHAPES);
+    storyQ('Pe poarta podului e pictată o formă. 🎨','Ce formă este aceasta?');
+    var box=el('div','shape-big');
+    box.appendChild(shapeSvg(k,choice(SHAPE_COLORS),130));
+    visual.appendChild(box);
+    hint='Cercul este rotund, fără colțuri. Triunghiul are 3 laturi și 3 colțuri. Pătratul are 4 laturi egale. Dreptunghiul are 4 laturi: două lungi și două scurte.';
+    var WHY={'cerc':'Cercul e rotund și nu are colțuri.','pătrat':'Pătratul are 4 laturi la fel de lungi.',
+      'dreptunghi':'Dreptunghiul are 2 laturi lungi și 2 scurte.','triunghi':'Triunghiul are 3 laturi.'};
+    choices(activity,SHAPES.map(function(n){return {label:n,ok:n===k,why:'Nu e '+n+'. '+WHY[n]+' Numără laturile! 🔍'};}),function(){
+      solved('Este un '+k+' ✔');
+    },{wide:true});
+    say('Ce formă vezi pe poartă? 🎨');
+  });
+  Q.push(function(){ // 36. căsuța cu trei numere
+    var o=addEx(), s=o.a+o.b;
+    storyQ('În căsuța paznicului locuiesc trei numere 🏠: sus '+s+', jos '+o.a+' și '+o.b+'. Sus stă numărul mare (suma).','Care scădere folosește aceleași trei numere și este corectă?');
+    var house=el('div','house'), roof=el('div','roof');
+    [['s',s],['a',o.a],['b',o.b]].forEach(function(p){roof.appendChild(el('div','rn k'+p[0]+' pos-'+p[0],String(p[1])));});
+    house.appendChild(roof);
+    house.appendChild(el('div','walls','🚪'));
+    visual.appendChild(house);
+    hint='Cu aceleași trei numere: numărul de sus − un număr de jos = celălalt număr de jos.';
+    var good=rand(0,1)?s+' − '+o.a+' = '+o.b:s+' − '+o.b+' = '+o.a;
+    choices(activity,[
+      {label:good,ok:true},
+      {label:Math.max(o.a,o.b)+' − '+Math.min(o.a,o.b)+' = '+s,ok:false,why:'Nu e adevărat! Scădem din numărul cel mare, '+s+'. 🏠'},
+      {label:s+' + '+o.a+' = '+o.b,ok:false,why:'Ca să aflăm un număr de jos, din numărul de sus SCĂDEM. ➖'}
+    ],function(){solved(s+' − '+o.a+' = '+o.b+' și '+s+' − '+o.b+' = '+o.a+' 🏠 ✔');},{wide:true});
+    say('Aceleași trei numere, altă socoteală! 🏠');
+  });
+  Q.push(function(){ // 37. găsim formele
+    var target=choice(SHAPES);
+    var others=SHAPES.filter(function(s){
+      return s!==target && !(target==='pătrat' && s==='dreptunghi') && !(target==='dreptunghi' && s==='pătrat');
+    });
+    var list=[target,target,target];
+    while(list.length<9) list.push(choice(others));
+    shuffle(list);
+    storyQ('Pe steagurile podului sunt desenate forme. 🚩','Atinge toate '+SHAPE_PL[target]+'! (sunt 3)');
+    var area=el('div','shapes-area'), found=0, counter=el('div','counter','Găsite: 0 / 3');
+    list.forEach(function(k){
+      var b=btn('shape-btn',null,function(){
+        if(locked || b.disabled) return;
+        if(k===target){
+          b.disabled=true;
+          b.classList.add('correct');
+          found++;
+          tick();
+          counter.textContent='Găsite: '+found+' / 3';
+          if(found===3) solved('Ai găsit toate '+SHAPE_PL[target]+'! ✔');
+        } else {
+          b.classList.remove('wrong');void b.offsetWidth;b.classList.add('wrong');
+          fail('Acesta este un '+k+'. Noi căutăm '+SHAPE_PL[target]+'! 🔍');
+        }
+      });
+      b.setAttribute('aria-label',k);
+      b.appendChild(shapeSvg(k,choice(SHAPE_COLORS),62));
+      area.appendChild(b);
+    });
+    visual.appendChild(area);
+    activity.appendChild(counter);
+    hint='Cercul este rotund. Triunghiul are 3 laturi. Pătratul are 4 laturi egale. Dreptunghiul are 2 laturi lungi și 2 scurte.';
+    say('Caută '+SHAPE_PL[target]+'! 🔍');
+  });
+  Q.push(function(){calculoQ('-');}); // 38
+  Q.push(function(){ // 39. proba scrisă corect
+    var add=rand(0,1)===0, o=add?addEx():subEx(), r=add?o.a+o.b:o.a-o.b, wrongA=o.a+choice([10,-10,1,-1]);
+    var good=add?r+' − '+o.b+' = '+o.a:r+' + '+o.b+' = '+o.a;
+    var bad1=add?r+' − '+o.b+' = '+wrongA:r+' + '+o.b+' = '+wrongA;
+    var bad2=add?o.a+' + '+o.b+' = '+r:o.a+' − '+o.b+' = '+r;
+    storyQ('Calculo 🤖 a scris trei probe pe scânduri. Doar una este bună!','Care este proba corectă pentru '+o.a+' '+(add?'+':MINUS)+' '+o.b+' = '+r+'?');
+    hint=add?'Proba adunării prin scădere: suma − un termen = celălalt termen. Verifică și dacă socoteala e corectă!':
+      'Proba scăderii prin adunare: diferența + scăzătorul = descăzutul. Verifică și dacă socoteala e corectă!';
+    choices(activity,[
+      {label:good,ok:true},
+      {label:bad1,ok:false,why:'Socoteala nu e corectă: '+(add?r+' − '+o.b:r+' + '+o.b)+' nu face '+wrongA+'. 🔍'},
+      {label:bad2,ok:false,why:'Aceasta e chiar socoteala din exercițiu, nu proba! 🔍'}
+    ],function(){solved('Proba corectă: '+good+' ✔');},{wide:true});
+    say('Atenție: o probă bună trebuie să fie și socotită corect! 🔍');
+  });
+  Q.push(function(){ // 40. ghicitoarea lui Calculo
+    var add=rand(0,1)===0, B, R, x, txt, slot=slotEl(), items;
+    if(add){
+      var o=pick(function(){return {B:rand(110,399),S:rand(300,999)};},function(o){return o.S-o.B>=100&&borrows(o.S,o.B)<=1;});
+      B=o.B;R=o.S;x=R-B;
+      txt='Mă gândesc la un număr. Dacă îi adun '+B+', obțin '+R+'. Ce număr este?';
+      items=[{v:slot,k:'a'},'+',{v:B,k:'b'},'=',{v:R,k:'s'}];
+      hint='Numărul + '+B+' = '+R+'. Numărul necunoscut este un termen: termen = sumă − celălalt termen = '+R+' − '+B+'.';
+    } else {
+      var o2=pick(function(){return {B:rand(110,399),D:rand(110,499)};},function(o){return o.B+o.D<=999&&carries(o.B,o.D)<=1;});
+      B=o2.B;R=o2.D;x=R+B;
+      txt='Mă gândesc la un număr. Dacă scad din el '+B+', obțin '+R+'. Ce număr este?';
+      items=[{v:slot,k:'s'},MINUS,{v:B,k:'b'},'=',{v:R,k:'a'}];
+      hint='Numărul − '+B+' = '+R+'. Numărul necunoscut este descăzutul: descăzut = diferență + scăzător = '+R+' + '+B+'.';
+    }
+    storyQ('Ultima scândură! Calculo 🤖 îi spune lui Capi o ghicitoare.','Rezolvă ghicitoarea lui Calculo:');
+    var Rb=robotEl(el('div','riddle',txt));
+    visual.appendChild(Rb.root);
+    visual.appendChild(eqEl(items));
+    numPad(activity,slot,x,function(){
+      Rb.face.textContent='🤖💖';
+      solved((add?x+' + '+B:x+' − '+B)+' = '+R+'. Podul e gata! 🌉 ✔');
+    },function(v){
+      return 'Verifică: '+(add?v+' + '+B+' = '+(v+B):v+' − '+B+' = '+(v-B))+', nu '+R+'. '+(add?'Calculează '+R+' − '+B:'Calculează '+R+' + '+B)+'. 🤖';
+    },true);
+    say('Ghicitoarea lui Calculo! Ce număr se ascunde? 🤖');
+  });
+
+  // ---------- 🍊 Livada Înmulțirii ----------
+  function mulOptions(a,b,why){
+    var items=[{label:mul(a,b),ok:true}];
+    items.push({label:a+' + '+b,ok:false,why:'Cu „+” am aduna doar '+a+' și '+b+'. Pentru termeni egali repetați folosim înmulțirea „×”.'});
+    if(a!==b) items.push({label:mul(b,b),ok:false,why:why.count});
+    items.push({label:mul(a+1,b),ok:false,why:why.count});
+    if(b<10) items.push({label:mul(a,b+1),ok:false,why:why.size});
+    return items;
+  }
+  Q.push(function(){ // 41. adunare repetată
+    var k=rand(2,5), n=pick(function(){return rand(2,5);},function(v){return v!==k;});
+    storyQ('Capi intră în livadă și vede '+k+' crengi. Pe fiecare creangă sunt câte '+n+' portocale. 🍊','Cum scriem ca adunare toate portocalele?');
+    var br=el('div','branches');
+    for(var i=0;i<k;i++){
+      var b=el('div','branch');
+      b.style.animationDelay=(i*0.1)+'s';
+      for(var j=0;j<n;j++) b.appendChild(el('span',null,'🍊'));
+      b.appendChild(el('span','lf','🍃'));
+      br.appendChild(b);
+    }
+    visual.appendChild(br);
+    hint='Fiecare creangă are '+n+' portocale. Adunăm '+n+' de atâtea ori câte crengi sunt.';
+    var opts=[{label:rep(n,k),ok:true},
+      {label:rep(n,k+1),ok:false,why:'Ai pus o creangă în plus! Sunt doar '+k+' crengi. 🍊'},
+      {label:n+' + '+k,ok:false,why:'Adunăm câte '+n+' portocale pentru FIECARE creangă. 🍊'}];
+    if(k>=3) opts.push({label:rep(n,k-1),ok:false,why:'Ai uitat o creangă! Sunt '+k+' crengi. 🍊'});
+    else opts.push({label:rep(n+1,k),ok:false,why:'Numără din nou portocalele de pe o creangă. 🍊'});
+    choices(activity,opts,function(){solved(rep(n,k)+' = '+mul(k,n)+' = '+k*n+' 🍊 ✔');},{wide:true});
+    say('Câte portocale are fiecare creangă? 🍊');
+  });
+  Q.push(function(){ // 42. ca înmulțire
+    var k=rand(2,5), n=rand(2,6);
+    if(k===n) n=n===6?5:n+1;
+    storyQ('Prietenii lui Capi au umplut '+k+' coșulețe cu câte '+n+' portocale.','Ce înmulțire arată coșulețele?');
+    visual.appendChild(basketsEl(k,n,'🍊'));
+    hint='Primul factor spune câte coșulețe sunt. Al doilea factor spune câte portocale sunt într-un coșuleț: „de … ori câte …”.';
+    choices(activity,mulOptions(k,n,{count:'Numără coșulețele: sunt '+k+'. 🧺',size:'Numără portocalele dintr-un coșuleț: sunt '+n+'. 🧺'}),function(){
+      solved('de '+k+' ori câte '+n+': '+mul(k,n)+' = '+k*n+' ✔');
+    },{wide:true});
+    say('Scrie mai scurt, cu înmulțirea! ✖️');
+  });
+  Q.push(function(){ // 43. numărăm din n în n
+    var n=choice([2,3,4,5,10]), vals=[], i;
+    for(i=0;i<6;i++) vals.push(i*n);
+    var hid=shuffle([2,3,4,5]).slice(0,2).sort(function(a,b){return a-b;});
+    storyQ('Capi sare din '+n+' în '+n+' pe pietrele din livadă. 🐾','Ce numere lipsesc de pe pietre?');
+    var row=el('div','stones'), stones=[];
+    vals.forEach(function(v,k){
+      if(k>0) row.appendChild(el('span','hopl','+'+n));
+      var q=hid.indexOf(k)>=0, s=el('div','stone'+(q?' q':''),q?'?':String(v));
+      stones.push(s);
+      row.appendChild(s);
+    });
+    visual.appendChild(row);
+    hint='Fiecare săritură adaugă '+n+'. Pornește de la numărul de dinainte și adună '+n+'.';
+    var cur=0, box=el('div','step');
+    activity.appendChild(box);
+    function ask(){
+      var k=hid[cur], v=vals[k];
+      stones[k].classList.add('cur');
+      box.replaceChildren(el('h3',null,cur===0?'Ce număr e pe prima piatră cu „?”':'Și pe a doua piatră cu „?”'));
+      choices(box,numberOptions(v,[1,-1,2,-2,n,-n],0,100).map(function(c){
+        return {label:String(c),ok:c===v,why:'Mai socotește: '+vals[k-1]+' + '+n+' = ? 🐾'};
+      }),function(){
+        stones[k].textContent=String(v);
+        stones[k].classList.remove('q','cur');
+        stones[k].classList.add('ok');
+        boing();
+        cur++;
+        if(cur<hid.length) setTimeout(function(){if(!locked) ask();},350);
+        else solved('Din '+n+' în '+n+': '+vals.join(', ')+' ✔');
+      });
+    }
+    ask();
+    say('Hop! Din '+n+' în '+n+'! 🐾');
+  });
+  Q.push(function(){ // 44. rânduri de pomi
+    var r=rand(2,5), c=rand(3,6);
+    if(r===c) c++;
+    storyQ('În livadă, portocalii 🌳 sunt plantați pe '+r+' rânduri, câte '+c+' pe fiecare rând.','Câți portocali sunt în livadă?');
+    var orch=el('div','orchard');
+    for(var i=0;i<r;i++){
+      var line=el('div');
+      for(var j=0;j<c;j++) line.appendChild(el('span',null,'🌳'));
+      orch.appendChild(line);
+    }
+    visual.appendChild(orch);
+    hint='Sunt '+r+' rânduri cu câte '+c+' pomi: „de '+r+' ori câte '+c+'”. Poți număra din '+c+' în '+c+'.';
+    calcPad(activity,r,'*',c,function(){solved(mul(r,c)+' = '+r*c+' portocali 🌳 ✔');},{keys:['a','b','s']});
+    say('Câte rânduri? Câți pomi pe un rând? 🌳');
+  });
+  function tableQ(pool,storyText){
+    var b=choice(pool), a=rand(2,10);
+    if(pool[0]>5) a=rand(2,9);
+    if(rand(0,1)){var t=a;a=b;b=t;}
+    storyQ(storyText,'Cât face '+mul(a,b)+'?');
+    hint='Înmulțirea este o adunare repetată: '+mul(a,b)+' = '+rep(b,a)+'. Poți număra din '+b+' în '+b+'.';
+    calcPad(activity,a,'*',b,function(){solved(mul(a,b)+' = '+a*b+' ✔');},{card:'leaf',keys:['a','b','s']});
+    say('Scrie produsul! ✖️');
+  }
+  Q.push(function(){tableQ([2,3,4,5,10],'O bufniță 🦉 o întreabă pe Capi din tabla înmulțirii.');}); // 45
+  Q.push(function(){ // 46. factori și produs
+    var a=rand(2,9), b=rand(2,9), p=a*b, idx=rand(0,2);
+    var items=[{v:a,k:'a'},MUL,{v:b,k:'b'},'=',{v:p,k:'s'}];
+    items[[0,2,4][idx]].hl=true;
+    var right=idx<2?'factor':'produs';
+    storyQ('O albină 🐝 zboară pe lângă Capi și o întreabă:','Cum se numește numărul colorat?');
+    visual.appendChild(inCard(eqEl(items),'leaf'));
+    hint='La înmulțire: factor × factor = produs.';
+    choices(activity,['factor','produs','termen','sumă'].map(function(n){
+      return {label:n,ok:n===right,why:'La înmulțire: factor × factor = produs. „Termen” și „sumă” sunt cuvinte de la adunare! ✖️'};
+    }),function(){solved('În '+mul(a,b)+' = '+p+', '+a+' și '+b+' sunt factorii, iar '+p+' este produsul ✔');},{wide:true});
+    say('Cum se numesc numerele la înmulțire? 🐝');
+  });
+  Q.push(function(){ // 47. schimbăm factorii
+    var a=rand(3,9), b=pick(function(){return rand(3,9);},function(v){return v!==a;}), p=a*b;
+    storyQ('Capi știe deja că '+mul(a,b)+' = '+p+'. 🍊','Cât face '+mul(b,a)+'?');
+    visual.appendChild(inCard(eqEl([{v:b,k:'b'},MUL,{v:a,k:'a'},'=',{v:'?'}]),'leaf'));
+    hint='Dacă schimbăm factorii între ei, produsul nu se schimbă!';
+    choices(activity,uniq([p,a+b,p+a,p-b]).map(function(v){
+      return {label:String(v),ok:v===p,why:v===a+b?'Noi înmulțim, nu adunăm! ✖️':'Am schimbat doar locul factorilor. Produsul rămâne același! 🔄'};
+    }),function(){solved(mul(a,b)+' = '+mul(b,a)+' = '+p+' 🔄 ✔');});
+    say('Ai observat? Sunt aceiași factori! 🔄');
+  });
+  Q.push(function(){ // 48. înmulțirea cu 0 și cu 1
+    var n=rand(2,10), z=rand(0,1), first=rand(0,1)===0, a=first?n:z, b=first?z:n, p=a*b;
+    storyQ('Bufnița 🦉 are o întrebare-capcană!','Cât face '+mul(a,b)+'?');
+    visual.appendChild(inCard(eqEl([{v:a,k:'a'},MUL,{v:b,k:'b'},'=',{v:'?'}]),'leaf'));
+    hint=z===0?'Orice număr înmulțit cu 0 dă 0. De exemplu: de 3 ori câte 0 portocale = 0 portocale.':'Un număr înmulțit cu 1 rămâne același.';
+    choices(activity,uniq([0,1,n,n+1]).map(function(v){
+      return {label:String(v),ok:v===p,why:z===0?'Orice număr înmulțit cu 0 dă 0! 0️⃣':'Un număr înmulțit cu 1 rămâne același! 1️⃣'};
+    }),function(){solved(mul(a,b)+' = '+p+' ✔');});
+    say(z===0?'Atenție, aici e un 0! 0️⃣':'Atenție, aici e un 1! 1️⃣');
+  });
+  Q.push(function(){tableQ([6,7,8,9],'Ultima provocare din livadă, de la bufnița înțeleaptă 🦉:');}); // 49
+  Q.push(function(){ // 50. problema finală, cu două operații
+    var o=pick(function(){return {k:rand(3,6),n:rand(4,8)};},function(o){return o.k*o.n<=48 && o.k!==o.n;});
+    var P=o.k*o.n, e=Math.min(rand(3,9),P-1), R=P-e;
+    storyQ('Capi a ajuns lângă izvor! Pentru baie, a pregătit '+o.k+' coșulețe cu câte '+o.n+' portocale. Apoi le-a dat prietenilor '+e+' portocale.',
+      'Câte portocale pune Capi în izvorul cald? ♨️');
+    var row=basketsEl(o.k,o.n,'🍊');
+    visual.appendChild(row);
+    hint='Problemă cu două operații: întâi aflăm câte portocale sunt în coșulețe (înmulțire), apoi scădem portocalele date prietenilor.';
+    var s1=step('Pasul 1: Câte portocale sunt în toate coșulețele?');
+    calcPad(s1,o.k,'*',o.n,function(){
+      var items=row.querySelectorAll('.basket span');
+      for(var i=0;i<e;i++) items[items.length-1-i].classList.add('gone');
+      var s2=step('Pasul 2: Scade portocalele date prietenilor!');
+      calcPad(s2,P,'-',e,function(){solved(mul(o.k,o.n)+' − '+e+' = '+P+' − '+e+' = '+R+' 🍊 ✔');},{into:s2,small:true});
+      say('Acum a doua operație: '+P+' − '+e+'. Începe cu unitățile! ✏️');
+    },{into:s1,small:true,keys:['a','b','s']});
+    say('Ultima provocare! Întâi înmulțirea, apoi scăderea. 🧩');
+  });
+
+  // ---------- Ecrane de poveste ----------
+  function img(src,cls,alt){var i=el('img',cls);i.src=src;i.alt=alt||'';return i;}
+  function btnRow(list){var r=el('div','ov-btns');list.forEach(function(b){r.appendChild(b);});return r;}
+  function trailEl(){
+    var t=el('div','trail');
+    ['🏡'].concat(CH.map(function(c){return c.icon;}),['♨️']).forEach(function(x,i){
+      if(i) t.appendChild(el('span','arr','➜'));
+      t.appendChild(el('span',null,x));
+    });
+    return t;
+  }
+  function openOv(nodes){
+    clearTimeout(nextTimer);
+    locked=true;
+    keyHandler=null;
+    ovCard.replaceChildren();
+    nodes.forEach(function(n){if(n) ovCard.appendChild(n);});
+    ov.hidden=false;
+    ovCard.scrollTop=0;
+    var b=ovCard.querySelector('button');
+    if(b) setTimeout(function(){b.focus();},60);
+  }
+  function closeOv(){ov.hidden=true;}
+  function intro(){
+    openOv([img('capi.jpg','hero','Capi, capibara'),el('h2',null,'Aventura lui Capi 🐾'),
+      el('p',null,'Capi este o capibara curioasă și prietenoasă. A auzit că, la capătul Țării Numerelor, este un izvor cald plin de portocale! ♨️🍊'),
+      el('p',null,'Ca să ajungă acolo, trebuie să treacă prin 5 locuri și să rezolve 50 de provocări de matematică. Fiecare răspuns corect o duce cu un pas mai aproape. O ajuți, Rebe?'),
+      trailEl(),
+      btnRow([btn('go-btn','🐾 Pornim la drum!',function(){closeOv();startQuestion();say(CH[0].intro+' 🌳');})])]);
+    say('Bună, Rebe! Sunt Capi, capibara. Mă ajuți să ajung la izvorul cald? ♨️');
+  }
+  function resume(){
+    var c=chOf(pos);
+    var again=btn('alt-btn','🔄 De la început',function(){
+      if(again.dataset.sure){resetAdventure();intro();return;}
+      again.dataset.sure='1';
+      again.textContent='Sigur? Apasă încă o dată';
+    });
+    openOv([img('capi.jpg','hero','Capi, capibara'),el('h2',null,'Bine ai revenit, Rebe! 🐾'),
+      el('p',null,'Capi te așteaptă în '+CH[c].icon+' '+CH[c].name+', la provocarea '+(pos+1)+' din '+TOTAL+'.'),
+      trailEl(),
+      btnRow([btn('go-btn','▶ Continuăm',function(){closeOv();startQuestion();}),again])]);
+    say('Hai să continuăm aventura! 🐾');
+  }
+  function chapterDone(){
+    var c=pos/PER-1, nx=CH[c+1];
+    bigFanfare();
+    confetti(40);
+    openOv([el('div','big-gift',CH[c].gift),el('h2',null,'🎉 '+CH[c].done),
+      el('p',null,'Capi a găsit '+CH[c].giftName+' '+CH[c].gift+'. Acum e în rucsac! 🎒'),
+      el('p',null,'Urmează: '+nx.icon+' '+nx.name+'. '+nx.intro),
+      btnRow([btn('go-btn','Mai departe ➜',function(){closeOv();startQuestion();say(nx.intro+' '+nx.icon);})])]);
+    say(CH[c].done+' '+CH[c].gift);
+  }
+  function finale(){
+    bigFanfare();
+    confetti(60);
+    setTimeout(function(){confetti(40);},900);
+    var dip=el('div','diploma');
+    dip.appendChild(el('h3',null,'🏅 DIPLOMĂ'));
+    dip.appendChild(el('p',null,'Rebe a ajutat-o pe Capi să ajungă la Izvorul cald și a rezolvat toate cele 50 de provocări!'));
+    dip.appendChild(el('p',null,'✅ Din prima: '+firstTry+' din '+TOTAL+' · ⭐ Stele câștigate: '+advStars));
+    var gifts=el('div','trail');
+    CH.forEach(function(c){gifts.appendChild(el('span',null,c.gift));});
+    dip.appendChild(gifts);
+    var back=el('a','alt-btn','← Jocurile lui Rebe');
+    back.href='rebe.html';
+    openOv([img('capi-izvor.jpg','photo','Capibare care fac baie într-un izvor cald, cu portocale'),el('h2',null,'♨️ Capi a ajuns la Izvorul cald!'),
+      el('p',null,'Capi face baie în apa caldă, printre portocale, împreună cu prietenii ei. Mulțumesc, Rebe! Fără tine nu reușea! 🍊💖'),dip,
+      btnRow([btn('go-btn','🔄 O nouă aventură',function(){resetAdventure();intro();}),back])]);
+    say('Am ajuns! Mulțumesc, Rebe! Ești cea mai bună prietenă! ♨️🍊💖');
+  }
+  function resetAdventure(){
+    pos=0;firstTry=0;advStars=0;curT=0;facing=1;
+    localStorage.setItem('rebe8_pos','0');
+    localStorage.setItem('rebe8_first','0');
+    localStorage.setItem('rebe8_stars','0');
+    question.replaceChildren();visual.replaceChildren();activity.replaceChildren();
+    panelTitle.textContent='';
+    renderMap();
+    placeCapi(0);
+  }
+
+  // ---------- Pornim ----------
+  function startQuestion(){
+    clearTimeout(nextTimer);
+    locked=false;
+    keyHandler=null;
+    mistakes=0;
+    hint='';
+    hintBox.hidden=true;
+    hintBtn.setAttribute('aria-expanded','false');
+    question.replaceChildren();
+    visual.replaceChildren();
+    activity.replaceChildren();
+    var c=chOf(pos);
+    panelTitle.textContent=CH[c].icon+' '+CH[c].name+' · Provocarea '+(pos+1)+' din '+TOTAL;
+    renderMap();
+    if(Math.abs(curT-pos)>0.01) walkTo(pos);
+    Q[pos]();
+  }
+  hintBtn.addEventListener('click',function(){
+    hintBox.hidden=!hintBox.hidden;
+    hintBtn.setAttribute('aria-expanded',String(!hintBox.hidden));
+    if(!hintBox.hidden){
+      hintBox.replaceChildren(el('div',null,'💡 '+(hint||'Citește cu atenție și mai încearcă!')));
+      var ul=el('ul','rules');
+      CH[chOf(Math.min(pos,TOTAL-1))].rules.forEach(function(r){ul.appendChild(el('li',null,r));});
+      hintBox.appendChild(ul);
+      say('Privește indiciul și mai încearcă! 😊');
+    }
+  });
+  document.addEventListener('keydown',function(e){
+    if(keyHandler && ov.hidden && !e.ctrlKey && !e.metaKey && !e.altKey && !document.querySelector('.lb-overlay')) keyHandler(e);
+  });
+  muteBtn.addEventListener('click',function(){
+    muted=!muted;
+    localStorage.setItem('rebe_muted',muted?'1':'0');
+    muteBtn.textContent=muted?'🔇':'🔊';
+    muteBtn.setAttribute('aria-label',muted?'Pornește sunetul':'Oprește sunetul');
+  });
+  zoomBtn.addEventListener('click',function(){zoomPref=!isZoom();placeCapi(curT);});
+  window.addEventListener('resize',function(){placeCapi(curT);});
+  starCount.textContent=stars;
+  muteBtn.textContent=muted?'🔇':'🔊';
+  muteBtn.setAttribute('aria-label',muted?'Pornește sunetul':'Oprește sunetul');
+  if(Q.length!==TOTAL && window.console) console.warn('Aventura are '+Q.length+' provocări în loc de '+TOTAL);
+  renderMap();
+  placeCapi(curT);
+  if(pos>=TOTAL) finale();
+  else if(pos>0) resume();
+  else intro();
+})();
+</script>
+</body>
+</html>
