@@ -362,6 +362,7 @@
     <h1>🐾 Aventura lui Capi</h1>
     <div class="top-actions">
       <div class="stars" aria-label="Stele câștigate">⭐ <span id="starCount">0</span></div>
+      <button class="mute-btn" id="homeBtn" type="button" aria-label="Capi se întoarce acasă" title="Capi se întoarce acasă">🏡</button>
       <button class="mute-btn" id="muteBtn" type="button" aria-label="Oprește sunetul">🔊</button>
     </div>
   </header>
@@ -648,7 +649,7 @@
     ['🌳',560,105,30],['🍊',554,98,13],['🌳',30,110,28],['🍊',24,103,13],
     ['🌳',200,194,26],['🍊',206,186,12],['♨️',400,30,26]
   ];
-  var segEls=[], segLen=[], dotEls=[], plankEls=[], giftEls=[], curT=pos, facing=1, bagCount=-1;
+  var segEls=[], segLen=[], dotEls=[], plankEls=[], giftEls=[], curT=pos, facing=1, bagCount=-1, walkId=0, walkTimer=null, homeWalk=false;
   (function buildMap(){
     var routeG=$('route'), dotsG=$('dots'), planksG=$('planks'), giftsG=$('gifts'), decor=$('decor');
     DECOR.forEach(function(d){svgEl('text',{class:'deco',x:d[1],y:d[2],'font-size':d[3]},decor).textContent=d[0];});
@@ -715,24 +716,29 @@
     var h=450, vy=Math.max(0,Math.min(1000-h,y-h/2));
     map.setAttribute('viewBox','0 '+vy.toFixed(1)+' 600 '+h);
   }
-  function placeCapi(t){
+  function placeCapi(t,dir){
     var p=posAt(t), a=posAt(Math.max(0,t-0.08)), b=posAt(Math.min(TOTAL,t+0.08));
-    var dx=b.x-a.x;
+    var dx=(b.x-a.x)*(dir||1);
     if(Math.abs(dx)>0.5) facing=dx<0?-1:1;
     capiG.setAttribute('transform','translate('+p.x.toFixed(1)+','+(p.y-26).toFixed(1)+')');
     capiFlip.setAttribute('transform',facing<0?'scale(-1,1)':'scale(1,1)');
     capiG.classList.toggle('swim',t>PER+0.02 && t<2*PER-0.02);
     camera(p.x,p.y);
   }
-  function walkTo(target,done){
-    var from=curT, start=null, dur=Math.max(700,Math.abs(target-from)*950);
+  function walkTo(target,done,o){
+    o=o||{};
+    var from=curT, start=null, dur=o.dur||Math.max(700,Math.abs(target-from)*950);
+    var dir=target<from?-1:1, id=++walkId;
     capiG.classList.add('walking');
     if(target>from+0.5 && target>PER && target<=2*PER) tone(300,0.12,'sine',0.06);
     function frame(ts){
+      if(id!==walkId) return;
       if(start===null) start=ts;
       var k=Math.min(1,(ts-start)/dur);
       var e=k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
-      placeCapi(from+(target-from)*e);
+      var t=from+(target-from)*e;
+      placeCapi(t,dir);
+      if(o.onStep) o.onStep(t);
       if(k<1) requestAnimationFrame(frame);
       else {curT=target;capiG.classList.remove('walking');if(done) done();}
     }
@@ -811,7 +817,7 @@
     confetti();
     capiState('happy',700);
     renderMap();
-    setTimeout(function(){walkTo(pos);},450);
+    walkTimer=setTimeout(function(){walkTo(pos);},450);
     var wait=pos%PER===0?3200:2800;
     nextTimer=setTimeout(function(){
       if(pos>=TOTAL) finale();
@@ -2054,6 +2060,29 @@
     renderMap();
     placeCapi(0);
   }
+  // Capi se plimbă înapoi pe drum până acasă, apoi reîncepe aventura
+  function goHome(){
+    homeWalk=true;
+    clearTimeout(nextTimer);clearTimeout(walkTimer);
+    locked=true;keyHandler=null;
+    hintBox.hidden=true;hintBtn.setAttribute('aria-expanded','false');
+    localStorage.setItem('rebe8_pos','0');
+    localStorage.setItem('rebe8_first','0');
+    localStorage.setItem('rebe8_stars','0');
+    question.replaceChildren();visual.replaceChildren();activity.replaceChildren();
+    panelTitle.textContent='🏡 Capi se întoarce acasă…';
+    say('Mă întorc acasă! Hop-hop! 🐾🏡');
+    if(!DESK.matches) mapWrap.scrollIntoView({behavior:'smooth',block:'center'});
+    walkTo(0,function(){
+      homeWalk=false;
+      resetAdventure();
+      say('Am ajuns acasă! 🏡');
+      setTimeout(intro,700);
+    },{dur:Math.min(8000,1500+curT*130),onStep:function(t){
+      var p=Math.floor(t+1e-6);
+      if(p<pos){pos=p;renderMap();}
+    }});
+  }
 
   // ---------- Pornim ----------
   function startQuestion(){
@@ -2092,6 +2121,21 @@
     localStorage.setItem('rebe_muted',muted?'1':'0');
     muteBtn.textContent=muted?'🔇':'🔊';
     muteBtn.setAttribute('aria-label',muted?'Pornește sunetul':'Oprește sunetul');
+  });
+  $('homeBtn').addEventListener('click',function(){
+    if(!ov.hidden || homeWalk) return;
+    // locked fără overlay = suntem între un răspuns corect și următoarea provocare
+    var wasLocked=locked, prevKey=keyHandler;
+    openOv([img('capi.jpg','hero','Capi, capibara'),el('h2',null,'🏡 Capi se întoarce acasă?'),
+      el('p',null,'Capi pornește din nou de acasă, de la prima provocare. Pașii făcuți în aventura asta se pierd (stelele tale rămân ⭐).'),
+      btnRow([btn('go-btn','▶ Nu, continuăm',function(){
+        closeOv();
+        if(!wasLocked){locked=false;keyHandler=prevKey;}
+        else if(pos>=TOTAL) finale();
+        else if(pos%PER===0) chapterDone();
+        else startQuestion();
+      }),btn('alt-btn','🏡 Da, acasă',function(){closeOv();goHome();})])]);
+    say('Vrei să mă întorc acasă? 🏡');
   });
   zoomBtn.addEventListener('click',function(){zoomPref=!isZoom();placeCapi(curT);});
   window.addEventListener('resize',function(){placeCapi(curT);});
